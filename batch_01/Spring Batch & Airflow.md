@@ -18,12 +18,15 @@ git clone example project
 
 ## spring batch란?
 
+PPT 로 대체.
+
 ## Spring Batch Application 전개 전략
 
-온라인, 온라인배치, 일반배치
+온라인, 온라인배치, 일반배치 그림추가
 
 ## spring batch 실습
 
+MD 파일 추가
 #### Tasklet
 
 #### Chunk
