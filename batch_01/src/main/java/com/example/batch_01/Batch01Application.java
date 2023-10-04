@@ -5,9 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 public class Batch01Application {
-
 	public static void main(String[] args) {
 		SpringApplication.run(Batch01Application.class, args);
 	}
-
 }

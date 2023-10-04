@@ -378,6 +378,10 @@ parameterName='{"value": "parameterValue", "type":"parameterType", "identifying"
 
 이 변경이 작업 매개변수 로드에 영향을 미치는 또 다른 경우는 실패한 작업 인스턴스를 다시 시작할 때입니다. 실패한 모든 v4 작업 인스턴스는 성공을 위해 다시 시작되거나 v5로의 마이그레이션이 완료되기 *전에* 중단될 것으로 예상됩니다 .
 
+
+https://europani.github.io/spring/2023/06/26/052-spring-batch-version5.html
+
+
 # Airflow 개요
 
 ## Airflow 란?
@@ -425,6 +429,7 @@ mariadb -u root -p
 
 #mysql create db and user
 CREATE DATABASE cjs_db;
+use cjs_db
 CREATE USER 'cjs'@'%' IDENTIFIED BY 'new1234!';
 GRANT ALL PRIVILEGES ON cjs_db.* TO 'cjs'@'%';
 flush privileges; 
@@ -436,13 +441,26 @@ mariadb –u cjs –p
 show databases;
 use cjs_db
 
-#동적라우터를 위한 테이블 생성
-CREATE TABLE api_route(  
+
+CREATE TABLE tatbestand(  
     id INT NOT NULL AUTO_INCREMENT,  
-    path VARCHAR(100) NOT NULL,  
-    method VARCHAR(40) NOT NULL,  
-    uri VARCHAR(100) NOT NULL,  
-    admission_date DATE,  
+    tattag DATE,  
+    tatzeit VARCHAR(100) NOT NULL,  
+    tatort VARCHAR(40) NOT NULL,  
+    tatort2 VARCHAR(100) NOT NULL,  
+    tatbestand VARCHAR(100) NOT NULL,  
+    betrag INT NOT NULL,
+    PRIMARY KEY ( id )
+);
+
+CREATE TABLE user(  
+    id INT NOT NULL ,  
+    first_name VARCHAR(100) NOT NULL,  
+    last_name VARCHAR(40) NOT NULL,  
+    email VARCHAR(100) NOT NULL,  
+    gender VARCHAR(100) NOT NULL,  
+    ip_address VARCHAR(100) NOT NULL,  
+    country_code VARCHAR(100) NOT NULL,  
     PRIMARY KEY ( id )
 );
 
