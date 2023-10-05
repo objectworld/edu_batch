@@ -14,43 +14,13 @@ git clone example project
 
 
 
-개요 및 Spring 배치 설명
-
-Spring Batch 구성
-
-맛보기 코드 실행
-
-MetaTable
-
-Job&Step
-
-JobParameter(왜 시스템파라미터가아닌지)  / Scope
-
-Next / Flow / Decider
-
-Tasklet & Chunk
-
-Reader & Processor & Writer 
-
-Multi-Thread & Listener
-
-Retry & Tolerant
-
-Spring Batch 5.0 적용 및 변경사항
 
 
+# Spring Batch 개요
 
-
-
-
-
-
-
-# spring batch 개요
-
-만약 매일 전 날의 데이터를 집계 해야한다고 가정해보겠습니다.
+만약 매일 전 날의 데이터 혹은 매달 전달의 데이터를 집계 해야한다고 가정해보겠습니다.
 이 집계 과정을 어디서 수행하면 될까요?
-웹 어플리케이션 밖에 모른다면 Tomcat + Spring MVC를 떠올리실것 같습니다.
+웹 어플리케이션 밖에 모른다면 Tomcat + Spring MVC가 생각이 날것같습니다
 하지만 이렇게 큰 데이터를 읽고, 가공하고, 저장한다면 해당 서버는 순식간에 CPU, I/O 등의 자원을 다 써버려서 다른 Request 처리를 못하게 됩니다.
 
 그리고 이 집계 기능은 **하루에 1번 수행**됩니다.
@@ -59,17 +29,14 @@ Spring Batch 5.0 적용 및 변경사항
 **5만번째에서 실패했다면, 5만 1번째부터 다시 실행**할 수 있다면 얼마나 좋을까요?
 
 또 이런 경우도 있을수 있습니다.
-오늘 아침 누군가가 집계 함수를 실행시켰는데, 다른 누군가가 또 실행시켜 집계 데이터가 2배로 뻥튀기 될 수도 있습니다.
-**같은 파라미터로 같은 함수를 실행할 경우** 이미 실행한 적이 있어 실패하는 기능을 지원한다면 얼마나 좋을까요?
+오늘 아침 누군가가 집계 실행 파일을 실행시켰는데, 다른 누군가가 또 실행시켜 집계 데이터가 2배로 뻥튀기 될 수도 있습니다.
+**같은 파라미터로 같은 실행 파일을 실행할 경우** 이미 실행한 적이 있어 실패하는 기능을 지원한다면 얼마나 좋을까요?
 
 바로 이런 단발성으로 대용량의 데이터를 처리하는 어플리케이션을 **배치 어플리케이션**이라고 합니다.
 위의 고민들을 다시 생각해보면 배치 어플리케이션을 구성하기 위해선 **비지니스 로직 외에 부가적으로 신경써야할 부분들이 많다**는 것을 알 수 있습니다.
 
-여기서 한가지 생각해볼것이, 웹 어플리케이션을 개발할때 저희는 비지니스 로직에 최대한 집중할 수 있습니다.
-그건 왜일까요?
-바로 Spring MVC를 사용하기 때문입니다.
-**Spring MVC를 사용함으로 비지니스 로직에 최대한 집중**할 수 있었습니다.
-그럼 Spring에서 이런 배치 어플리케이션을 지원하는 모듈이 없을까요?
+Spring MVC를 사용하기 때문에 웹 어플리케이션을 개발할때 비지니스 로직에 최대한 집중할 수 있습니다.
+그럼 Spring에서 이런 배치성 어플리케이션을 지원하는 모듈이 없을까요?
 
 Spring 진영에선 **Spring Batch**가 있습니다.
 
@@ -84,9 +51,19 @@ Spring Batch를 소개하기전에 배치 어플리케이션이란 어떤 것인
 
 
 
-## spring batch란?
+## Batch vs Quartz?
 
-PPT 로 대체.
+간혹 Spring Batch와 Spring Quartz를 비교하는 글을 보게 되는데요.
+둘은 역할이 완전히 다릅니다.
+**Quartz는 스케줄러의 역할**이지, Batch 와 같이 **대용량 데이터 배치 처리에 대한 기능을 지원하지 않습니다**.
+반대로 Batch 역시 Quartz의 다양한 스케줄 기능을 지원하지 않아서 보통은 Quartz + Batch 또는 Batch Application 에 다양한 Scheduler를 조합해서 사용합니다.
+정해진 스케줄마다 Quartz가 Spring Batch를 실행하는 구조라고 보시면 됩니다.
+
+
+
+
+
+## Spring Batch란?
 
 Spring Batch 프로젝트는 Accenture와 Spring Source의 공동 작업으로 2007년에 탄생했습니다.
 Accenture는 수년간의 노력으로 그들만의 배치 프레임워크를 만들었고, 그를 통해 얻은 경험을 가지고 있었습니다.
@@ -95,26 +72,297 @@ Accenture는 수년간의 노력으로 그들만의 배치 프레임워크를 �
 Spring Batch는 Spring의 특성을 그대로 가져왔습니다.
 그래서 **DI, AOP, 서비스 추상화** 등 Spring 프레임워크의 3대 요소를 모두 사용할 수 있으면서, Accenture의 Batch 노하우가 담긴 아키텍처를 사용할 수 있습니다.
 
-현재 Spring Batch 4.0 (Spring Boot 2.0) 에서 지원하는 Reader & Writer는 아래와 같습니다.
-(Reader는 데이터를 읽어오는 모듈이며, Writer는 데이터를 쓰는 모듈이라고 생각하시면 됩니다.)
 
-| DataSource | 기술      | 설명                                       |
-| ---------- | --------- | ------------------------------------------ |
-| Database   | JDBC      | 페이징, 커서, 일괄 업데이트 등 사용 가능   |
-| Database   | Hibernate | 페이징, 커서 사용 가능                     |
-| Database   | JPA       | 페이징 사용 가능 (현재 버전에선 커서 없음) |
-| File       | Flat file | 지정한 구분자로 파싱 지원                  |
-| File       | XML       | XML 파싱 지원                              |
+
+PPT 로 대체.
 
 
 
-## Batch vs Quartz?
 
-간혹 Spring Batch와 Spring Quartz를 비교하는 글을 보게 되는데요.
-둘은 역할이 완전히 다릅니다.
-**Quartz는 스케줄러의 역할**이지, Batch 와 같이 **대용량 데이터 배치 처리에 대한 기능을 지원하지 않습니다**.
-반대로 Batch 역시 Quartz의 다양한 스케줄 기능을 지원하지 않아서 보통은 Quartz + Batch 또는 Batch Application 에 다양한 Scheduler를 조합해서 사용합니다.
-정해진 스케줄마다 Quartz가 Spring Batch를 실행하는 구조라고 보시면 됩니다.
+
+## **Spring Batch 장점**
+
+1) 대용량 데이터 처리에 최적화되어 고성능을 발휘
+2) 효과적인 로깅, 통계 처리, 트랜잭션 관리 등 재사용 가능한 필수 기능을 지원
+3) 수동으로 처리하지 않도록 자동화되어 있습니다.
+4) 예외사항과 비정상 동작에 대한 방어 기능 존재.
+
+ 
+
+## **Spring Batch 단점**
+
+\- 스케줄 기능 제공하지 않음
+
+\- 스케줄링을 위해 jenkins나, Quarz를 같이 사용
+
+
+
+## Spring Batch 아키텍처
+
+
+
+
+
+![img](https://blog.kakaocdn.net/dn/bnFDbn/btrt1J2IjLo/GFyPOicHWmXhiTW2Ymgcck/img.png)Spring Batch 계층화 아키텍처
+
+
+
+- **Application** : Spring Batch를 사용하여 개발자가 작성한 모든 배치 작업과 사용자 정의 코드
+- **Batch Core** : 배치 작업을 시작하고 제어하는 데 필요한 핵심 런타임 클래스를 포함
+- **Batch Infrastructure** : 개발자와 애플리케이션에서 사용하는 일반적인 Reader와 Writer 그리고 RetryTemplate과 같은 서비스를 포함
+
+스프링 배치는 계층 구조가 위와 같이 설계되어 있기 때문에 개발자는 **Application** 계층의 비즈니스 로직에 집중할 수 있고, 배치의 동작과 관련된 것은 **Batch Core**에 있는 클래스들을 이용하여 제어할 수 있다.
+
+ 
+
+
+
+![img](https://blog.kakaocdn.net/dn/T1ug9/btrtRDW0Rtm/kn0txJZU27MSmo5qDKQjZ1/img.png)
+
+
+
+**JobRepository**
+
+다양한 배치 수행과 관련된 수치 데이터와 잡의 상태를 유지 및 관리한다. 
+
+일반적으로 관계형 데이터베이스를 사용하며 스프링 배치 내의 대부분의 주요 컴포넌트가 공유한다.
+
+실행된 Step, 현재 상태, 읽은 아이템 및 처리된 아이템 수 등이 모두 JobRepository에 저장된다.
+
+
+
+**Job**
+
+Job은 배치 처리 과정을 하나의 단위로 만들어 표현한 객체이고 여러 Step 인스턴스를 포함하는 컨테이너이다.
+
+Job이 실행될 때 스프링 배치의 많은 컴포넌트는 탄력성(resiliency)을 제공하기 위해 서로 상호작용을 한다.
+
+
+
+**JobLauncher**
+
+Job을 실행하는 역할을 담당한다. Job.execute을 호출하는 역할이다.
+
+Job의 재실행 가능 여부 검증, 잡의 실행 방법, 파라미터 유효성 검증 등을 수행한다.
+
+스프링 부트의 환경에서는 부트가 Job을 시작하는 기능을 제공하므로, 일반적으로 직접 다룰 필요가 없는 컴포넌트다.
+
+Job을 실행하면 해당 잡은 각 Step을 실행한다. 각 스텝이 실행되면 JobRepository는 현재 상태로 갱신된다.
+
+
+
+**Step**
+
+스프링 배치에서 가장 일반적으로 상태를 보여주는 단위이다. 각 Step은 잡을 구성하는 독립된 작업의 단위이다.
+
+Step에는 Tasklet, Chunk 기반으로 2가지가 있다.
+
+
+
+**Tasklet**
+
+Step이 중지될 때까지 execute 메서드가 계속 반복해서 수행하고 수행할 때마다 독립적인 트랜잭션이 얻어진다. 초기화, 저장 프로시저 실행, 알림 전송과 같은 잡에서 일반적으로 사용된다.
+
+
+
+**Chunk**
+
+한 번에 하나씩 데이터(row)를 읽어 Chunk라는 덩어리를 만든 뒤, Chunk 단위로 트랜잭션을 다루는 것
+
+Chunk 단위로 트랜잭션을 수행하기 때문에 실패할 경우엔 해당 Chunk 만큼만 롤백이 되고, 이전에 커밋된 트랜잭션 범위까지는 반영이 된다.
+
+Chunk 기반 Step은 ItemReader, ItemProcessor, ItemWriter라는 3개의 주요 부분으로 구성될 수 있다.
+
+
+
+![img](https://blog.kakaocdn.net/dn/tNi1O/btrtZ7v5HrM/4eLtLQJIhopD4xgbpkhJw0/img.png)
+
+
+
+ItemReader와 ItemProcessor에서 데이터는 1건씩 다뤄지고, Writer에선 Chunk 단위로 처리된다.
+
+> 일반적으로 스프링 배치는 대용량 데이터를 다루는 경우가 많기 때문에 Tasklet보다 상대적으로 트랜잭션의 단위를 짧게 하여 처리할 수 있는 ItemReader, ItemProcessor, ItemWriter를 이용한 Chunk 지향 프로세싱을 이용한다.
+
+
+
+**Item**
+
+작업에 사용하는 데이터이다. Item의 전체적인 Flow는 다음과 같이 읽고 처리하기 쓰기로 단순하다. 그리고 이에 대해 ItemReader, ItemProcessor, ItemWriter가 각 역할을 맞아 수행한다.
+
+ 
+
+
+
+![img](https://blog.kakaocdn.net/dn/dZTaqa/btrCHpb1Exs/iN3zrFmeNzmjTaIbkkmjS0/img.png)
+
+
+
+ 
+
+**ItemReader**
+
+ItemReader는 말 그대로 데이터를 읽어들인다. DB 데이터뿐만 아니라 File, XML, JSON, CSV 등 다른 데이터 소스를 배치 처리의 입력으로 사용할 수 있다. 또한 JMS와 같은 다른 유형의 데이터 소스도 지원한다. 정리하면 다음과 같다.
+
+- 입력 데이터에서 읽어오기
+- 파일에서 읽어오기
+- Database에서 읽어오기
+- Java Message Service등 다른 소스에서 읽어오기
+- 본인만의 커스텀한 Reader로 읽어오기
+
+ 
+
+**ItemWriter**
+
+ItemWriter는 Spring Batch에서 사용하는 출력 기능이다. Spring Batch가 처음 나왔을 때, ItemWriter는 ItemReader와 마찬가지로 item을 하나씩 다루었다. 그러나 Spring Batch2와 청크 (Chunk) 기반 처리의 도입으로 인해 ItemWriter에도 큰 변화가 있었다. 이 업데이트 이후 부터 **ItemWriter는 item 하나를 작성하지 않고 Chunk 단위로 묶인 item List를 다룬다.**
+
+ 
+
+**ItemProcessor**
+
+ItemProcessor는 데이터를 가공 (혹은 처리)한다. 해당 기능은 필수가 아니다.
+
+- ItemProcessor는 데이터를 가공하거나 필터링하는 역할을 한다. 이는 Writer 부분에서도 충분히 구현 가능하다.
+- 그럼에도 ItemProcessor를 쓰는 것은 Reader, Writer와는 별도의 단계로 기능이 분리되기 때문이다.
+
+ 
+
+## **스프링 배치 구성요소**
+
+#### **Job**
+
+스프링 배치의 여러 가지 처리과정을 하나의 단위로 만들어 놓은 가장 큰 실행 단위이다. 하나의 Job은 여러 개의 Step으로 이루어지며, 이 Step들을 순차적으로 실행한다.
+
+ 
+
+#### **Step**
+
+Job의 실행 단계를 나타내는 것으로, Tasklet 또는 Chunk 지향 처리 방식으로 구성되어 있다.
+
+ 
+
+#### **Tasklet**
+
+Step에서 실행되는 최소 실행 단위이다. 스프링에서 제공하는 Tasklet 인터페이스를 구현하여 실행시킬 수 있다. Tasklet이 실행되면 Job의 다음 Step으로 넘어가게 된다.
+
+ 
+
+#### **Chunk 지향 처리(Chunk-oriented Processing)**
+
+대용량 데이터를 처리할 때 사용되는 방식으로, 지정된 chunk size 만큼 데이터를 처리하고 다음 chunk를 처리하는 방식이다. 이 방식은 데이터 처리의 속도를 높이고, 메모리를 효율적으로 사용할 수 있다.
+
+Chunk 지향 처리 방식의 Step은 ItemReader, ItemProcessor, ItemWriter로 구성되어 있다.
+
+ 
+
+**ItemReader**
+
+데이터베이스의 데이터 또는 파일 등을 읽어서 반환하는 역할을 수행한다. ItemReader는 첫 번째 데이터부터 하나씩 읽어 ItemProcessor에게 전달한다. 모든 데이터를 읽어 들이면 null을 반환하고 처리가 종료된다.
+
+ 
+
+**ItemProcessor**
+
+ItemReader로부터 읽어온 데이터를 가공하거나 필터링하는 역할을 수행한다. 가공된 데이터는 ItemWriter에 전달한다.
+
+ 
+
+**ItemWriter**
+
+가공된 데이터를 저장하거나 파일, 데이터베이스 등의 외부 저장소에 출력하는 역할을 수행한다. 만약, 예외가 발생하면 롤백이 가능하다.
+
+ 
+
+#### **JobRepository**
+
+스프링 배치에서 Job의 실행 정보를 저장하고 관리하는 데이터베이스로 JobLauncher에 의해 사용된다. 스프링에서는 기본적으로 메모리 기반의 JobRepository를 제공한다.
+
+ 
+
+**JobExecution**
+
+Job의 실행 정보를 저장하며 JobInstance와 연관된다.
+
+ 
+
+**JobInstance**
+
+Job의 논리적 실행 단위를 의미한다.
+
+ 
+
+**StepExecution**
+
+Job의 실행 과정에서 Step의 실행 정보를 저장하며, JobExecution과 연관된다. 한 개의 JobExecution은 여러 개의 StepExecution을 가질 수 있다.
+
+ 
+
+**ExecutionContext**
+
+Job 또는 Step 실행 중에 사용자가 저장하고자 하는 임시 데이터를 저장한다.
+
+ 
+
+#### **JobLauncher**
+
+Job을 실행하는 인터페이스이다. JobRepository에서 Job의 실행 정보를 읽어 Job을 실행하고 결과를 JobRepository에 저장한다.
+
+ 
+
+#### **JobOperator**
+
+Job의 실행, 중지, 재시작 등의 작업을 수행하는 인터페이스이다. 스프링 배치에서는 JobOperator 인터페이스를 구현하는 SimpleJobOperator를 제공하고 있다.
+
+
+
+## **스프링 배치 사용 사례**
+
+배치 애플리케이션은 일정 주기로 실행되어야 할 때나 실시간 처리가 어려운 대량의 데이터를 처리할 때 주로 사용된다.
+
+- ETL(Extract 추출, Transform 변환, Load 적재)
+- 데이터 마이그레이션(Spring Batch는 커밋 횟수 측정, 롤백 기능 제공)
+- 대규모 데이터 병렬 처리
+
+ 
+
+### **1. 일/월/년 등 특정기간 별 매출 집계하기**
+
+엔터프라이즈 단위의 데이터 집계는 하루에 100만건까지 나올 수 있다. 이를 count 쿼리로 실행하기에는 서버 부하가 심해질 것이다. 그래서 매일 새벽 매출 집계 데이터를 만들어 외부 요청이 올 경우 미리 만들어 준 집계 데이터를 바로 전달하면 성능과 부하를 모두 잡을 수 있다.
+
+ 
+
+### **2. ERP 연동하기**
+
+재무팀의 요구사항으로 매일 매출 현황을 ERP로 전달해야하는 상황에서 Spring Batch가 많이 사용된다. 매일 아침 8시에 ERP에 전달해야할 매출 데이터를 전송해야한다면 아래와 같은 구조로 쉽게 구현할 수 있다.
+
+ 
+
+### **3. 구독 서비스** 
+
+전송할 데이터 내역과 구독자 정보를 받아 정해진 시간에 구독을 신청한 회원에게 규칙적으로 메일을 일괄 전송할 때 Batch를 사용하면 쉽게 구현할 수 있다. 그러면 서버나 클라이언트나 다른 정보를 열람하는 등 다른 서비스에 영향을 주지 않는다.
+
+ 
+
+이 외에도 큰 데이터를 활용하여 보험급여를 결정한다거나 트랜잭션 방식으로 포맷, 유효성 확인 및 처리가 필요한 내부 및 외부 시스템에서 수신한 정보를 기록 시스템으로 통합하는 등 여러 방식으로 사용할 수 있다.
+
+ 
+
+
+
+# Spring Batch 실습
+
+## 맛보기 코드 실행
+
+### jobname 설정
+
+spring.batch.job.name: ${job.name:NONE}
+
+Spring Batch가 실행될때, **Program arguments로 `job.name` 값이 넘어오면 해당 값과 일치하는 Job만 실행**하겠다는 것입니다.
+여기서 `${job.name:NONE}`을 보면 `:`를 사이에 두고 좌측에 `job.name`이, 우측에 `NONE`이 있는데요.
+이 코드의 의미는 `job.name`**이 있으면** `job.name`**값을 할당하고, 없으면** `NONE`**을 할당**하겠다는 의미입니다.
+중요한 것은! `spring.batch.job.names`에 `NONE`이 할당되면 **어떤 배치도 실행하지 않겠다는 의미**입니다.
+즉, 혹시라도 **값이 없을때 모든 배치가 실행되지 않도록 막는 역할**입니다.
+
+
 
 
 
@@ -128,16 +376,191 @@ https://docs.spring.io/spring-batch/docs/3.0.x/reference/html/metaDataSchema.htm
 
 
 
-## Spring Batch Application 전개 전략
 
-온라인, 온라인배치, 일반배치 그림추가
 
-## spring batch 실습
+## Job&Step
 
-MD 파일 추가
-#### Tasklet
+TODO
 
-#### Chunk
+
+
+## JobParameter(왜 시스템파라미터가아닌지)  / Scope
+
+Spring Batch의 경우 외부 혹은 내부에서 파라미터를 받아 여러 Batch 컴포넌트에서 사용할 수 있게 지원하고 있습니다.
+이 파라미터를 **Job Parameter**라고 합니다.
+Job Parameter를 사용하기 위해선 항상 Spring Batch 전용 Scope를 선언해야만 하는데요.
+크게 `@StepScope`와 `@JobScope` 2가지가 있습니다.
+사용법은 간단한데, 아래와 같이 SpEL로 선언해서 사용하시면 됩니다.
+
+```java
+@Value("#{jobParameters[파라미터명]}")
+```
+
+> `jobParameters` 외에도 `jobExecutionContext`, `stepExecutionContext` 등도 SpEL로 사용할 수 있습니다.
+> @JobScope에선 `stepExecutionContext`는 사용할 수 없고, `jobParameters`와 `jobExecutionContext`만 사용할 수 있습니다.
+
+각각의 Scope에서 사용하는 샘플 코드는 아래와 같습니다.
+
+
+
+
+
+#### [@StepScope](https://github.com/StepScope) & [@JobScope](https://github.com/JobScope) 소개
+
+Spring Batch는 `@StepScope`와 `@JobScope` 라는 아주 특별한 Bean Scope를 지원합니다.
+아시다시피, **Spring Bean의 기본 Scope는 singleton**인데요.
+그러나 아래처럼 Spring Batch 컴포넌트 (Tasklet, ItemReader, ItemWriter, ItemProcessor 등)에 `@StepScope`를 사용하게 되면
+
+![stepscope1](D:\springbatch\Spring Batch 가이드(Markdown)\images\99A2F9475B7607502D)
+
+Spring Batch가 Spring 컨테이너를 통해 지정된 **Step의 실행시점에 해당 컴포넌트를 Spring Bean으로 생성**합니다.
+마찬가지로 `@JobScope`는 **Job 실행시점**에 Bean이 생성 됩니다.
+즉, **Bean의 생성 시점을 지정된 Scope가 실행되는 시점으로 지연**시킵니다.
+
+> 어떻게 보면 MVC의 request scope와 비슷할 수 있겠습니다.
+> request scope가 request가 왔을때 생성되고, response를 반환하면 삭제되는것처럼, JobScope, StepScope 역시 Job이 실행되고 끝날때, Step이 실행되고 끝날때 생성/삭제가 이루어진다고 보시면 됩니다.
+
+이렇게 Bean의 생성시점을 어플리케이션 실행 시점이 아닌, Step 혹은 Job의 실행시점으로 지연시키면서 얻는 장점은 크게 2가지가 있습니다.
+
+첫째로, **JobParameter의 Late Binding**이 가능합니다.
+Job Parameter가 StepContext 또는 JobExecutionContext 레벨에서 할당시킬 수 있습니다.
+꼭 Application이 실행되는 시점이 아니더라도 Controller나 Service와 같은 **비지니스 로직 처리 단계에서 Job Parameter를 할당**시킬 수 있습니다.
+이 부분은 아래에서 좀 더 자세하게 예제와 함께 설명드리겠습니다.
+
+두번째로, 동일한 컴포넌트를 병렬 혹은 동시에 사용할때 유용합니다.
+Step 안에 Tasklet이 있고, 이 Tasklet은 멤버 변수와 이 멤버 변수를 변경하는 로직이 있다고 가정해봅시다.
+이 경우 `@StepScope` 없이 Step을 병렬로 실행시키게 되면 **서로 다른 Step에서 하나의 Tasklet을 두고 마구잡이로 상태를 변경**하려고 할것입니다.
+하지만 `@StepScope`가 있다면 **각각의 Step에서 별도의 Tasklet을 생성하고 관리하기 때문에 서로의 상태를 침범할 일이 없습니다**.
+
+
+
+#### 5-3. Job Parameter 오해
+
+Job Parameters는 `@Value`를 통해서 가능합니다.
+그러다보니 여러가지 오해가 있을 수 있는데요.
+Job Parameters는 Step이나, Tasklet, Reader 등 Batch 컴포넌트 Bean의 생성 시점에 호출할 수 있습니다만, 정확히는 **Scope Bean을 생성할때만 가능**합니다.
+즉, **`@StepScope`, `@JobScope` Bean을 생성할때만 Job Parameters가 생성**되기 때문에 사용할 수 있습니다.
+
+예를 들어 아래와 같이 메소드를 통해 Bean을 생성하지 않고, 클래스에서 직접 Bean 생성을 해보겠습니다.
+Job과 Step의 코드에서 `@Bean`과 `@Value("#{jobParameters[파라미터명]}")`를 **제거**하고 `SimpleJobTasklet`을 생성자 DI로 받도록 합니다.
+
+> `@Autowired`를 쓰셔도 됩니다.
+
+![jobparameter1](D:\springbatch\Spring Batch 가이드(Markdown)\images\9994B94E5B76075129)
+
+그리고 `SimpleJobTasklet`은 아래와 같이 `@Component`와 `@StepScope`로 **Scope가 Step인 Bean**으로 생성합니다.
+이 상태에서 `@Value("#{jobParameters[파라미터명]}`를 Tasklet의 멤버변수로 할당합니다.
+
+![jobparameter2](D:\springbatch\Spring Batch 가이드(Markdown)\images\99C0984A5B76075126)
+
+이렇게 **메소드의 파라미터로 JobParameter를 할당받지 않고, 클래스의 멤버 변수로 JobParameter를 할당** 받도록 해도 실행해보시면!
+
+![jobparameter3](D:\springbatch\Spring Batch 가이드(Markdown)\images\994B8F365B76075126)
+
+정상적으로 JobParameter를 받아 사용할 수 있습니다.
+이는 **SimpleJobTasklet Bean이 `@StepScope`로 생성**되었기 때문입니다.
+
+반면에, 이 SimpleJobTasklet Bean을 일반 singleton Bean으로 생성할 경우 아래와 같이 `'jobParameters' cannot be found` 에러가 발생합니다.
+
+![jobparameter4](D:\springbatch\Spring Batch 가이드(Markdown)\images\99B8343A5B76075127)
+
+즉, Bean을 메소드나 클래스 어느 것을 통해서 생성해도 무방하나 Bean의 Scope는 Step이나 Job이어야 한다는 것을 알 수 있습니다.
+
+JobParameters를 사용하기 위해선 꼭 **`@StepScope`, `@JobScope`로 Bean을 생성**해야한다는 것을 잊지마세요.
+
+#### 5-4. JobParameter vs 시스템 변수
+
+앞의 이야기를 보면서 아마 이런 의문이 있을 수 있습니다.
+
+- 왜 꼭 Job Parameter를 써야하지?
+- 기존에 Spring Boot에서 사용하던 여러 환경변수 혹은 시스템 변수를 사용하면 되지 않나?
+- CommandLineRunner를 사용한다면 `java jar application.jar -D파라미터`로 시스템 변수를 지정하면 되지 않나?
+
+자 그래서 왜 Job Parameter를 써야하는지 설명드리겠습니다.
+아래 2가지 코드를 한번 보겠습니다.
+
+#### JobParameter
+
+```java
+@Bean
+@StepScope
+public FlatFileItemReader<Partner> reader(
+        @Value("#{jobParameters[pathToFile]}") String pathToFile){
+    FlatFileItemReader<Partner> itemReader = new FlatFileItemReader<Partner>();
+    itemReader.setLineMapper(lineMapper());
+    itemReader.setResource(new ClassPathResource(pathToFile));
+    return itemReader;
+}
+```
+
+#### 시스템 변수
+
+> 여기에서 얘기하는 시스템 변수는 application.properties와 `-D` 옵션으로 실행하는 변수까지 포함합니다.
+
+```java
+@Bean
+@ConfigurationProperties(prefix = "my.prefix")
+protected class JobProperties {
+
+    String pathToFile;
+
+    ...getters/setters
+}
+
+@Autowired
+private JobProperties jobProperties;
+
+@Bean
+public FlatFileItemReader<Partner> reader() {
+    FlatFileItemReader<Partner> itemReader = new FlatFileItemReader<Partner>();
+    itemReader.setLineMapper(lineMapper());
+    String pathToFile = jobProperties.getPathToFile();
+    itemReader.setResource(new ClassPathResource(pathToFile));
+    return itemReader;
+}
+```
+
+위 2가지 방식에는 몇 가지 차이점이 있습니다.
+
+일단 첫번째로, 시스템 변수를 사용할 경우 **Spring Batch의 Job Parameter 관련 기능을 못쓰게** 됩니다.
+예를 들어, Spring Batch는 **같은 JobParameter로 같은 Job을 두 번 실행하지 않습니다**.
+하지만 시스템 변수를 사용하게 될 경우 이 기능이 전혀 작동하지 않습니다.
+또한 Spring Batch에서 자동으로 관리해주는 Parameter 관련 메타 테이블이 전혀 관리되지 않습니다.
+
+둘째, Command line이 아닌 다른 방법으로 Job을 실행하기가 어렵습니다.
+만약 실행해야한다면 **전역 상태 (시스템 변수 혹은 환경 변수)를 동적으로 계속해서 변경시킬 수 있도록** Spring Batch를 구성해야합니다.
+동시에 여러 Job을 실행하려는 경우 또는 테스트 코드로 Job을 실행해야할때 문제가 발생할 수 있습니다.
+
+특히 Job Parameter를 못쓰는 점은 큰 단점인데요.
+Job Parameter를 못쓴다는 것은 위에서도 언급한 **Late Binding을 못하게 된다**는 의미입니다.
+
+예를 들어 웹 서버가 있고, 이 웹서버에서 Batch를 수행한다고 가정해봅시다.
+외부에서 넘겨주는 파라미터에 따라 Batch가 다르게 작동해야한다면, 이를 시스템 변수로 풀어내는 것은 너무나 어렵습니다.
+하지만 아래와 같이 Job Parameter를 이용한다면 아주 쉽게 해결할 수 있습니다.
+
+
+
+
+
+## Next / Flow / Decider
+
+TODO
+
+
+
+## Tasklet & Chunk
+
+TODO
+
+
+
+### Tasklet
+
+TODO
+
+
+
+### Chunk
 
 Spring Batch에서의 Chunk란 데이터 덩어리로 작업 할 때 **각 커밋 사이에 처리되는 row 수**를 얘기합니다.
 즉, Chunk 지향 처리란 **한 번에 하나씩 데이터를 읽어 Chunk라는 덩어리를 만든 뒤, Chunk 단위로 트랜잭션**을 다루는 것을 의미합니다.
@@ -177,9 +600,7 @@ for(int i=0; i<totalSize; i+=chunkSize){ // chunkSize 단위로 묶어서 처리
 
 
 
-
-
-## Page Size vs Chunk Size
+### Page Size vs Chunk Size
 
 기존에 Spring Batch를 사용해보신 분들은 아마 PagingItemReader를 많이들 사용해보셨을 것입니다.
 PagingItemReader를 사용하신 분들 중 간혹 Page Size와 Chunk Size를 같은 의미로 오해하시는 분들이 계시는데요.
@@ -238,199 +659,53 @@ PageSize가 10이고, ChunkSize가 50이라면 **ItemReader에서 Page 조회가
 
 
 
-## Reader/Processor/Writer
 
 
+## Reader & Processor & Writer 
 
-
-
-
-
-
-
-jobname 설정
-
-spring.batch.job.name: ${job.name:NONE}
-
-Spring Batch가 실행될때, **Program arguments로 `job.name` 값이 넘어오면 해당 값과 일치하는 Job만 실행**하겠다는 것입니다.
-여기서 `${job.name:NONE}`을 보면 `:`를 사이에 두고 좌측에 `job.name`이, 우측에 `NONE`이 있는데요.
-이 코드의 의미는 `job.name`**이 있으면** `job.name`**값을 할당하고, 없으면** `NONE`**을 할당**하겠다는 의미입니다.
-중요한 것은! `spring.batch.job.names`에 `NONE`이 할당되면 **어떤 배치도 실행하지 않겠다는 의미**입니다.
-즉, 혹시라도 **값이 없을때 모든 배치가 실행되지 않도록 막는 역할**입니다.
-
-
-
-Next,Step,Decider
-
-
-
-## JobParameter와 Scope
-
-Spring Batch의 경우 외부 혹은 내부에서 파라미터를 받아 여러 Batch 컴포넌트에서 사용할 수 있게 지원하고 있습니다.
-이 파라미터를 **Job Parameter**라고 합니다.
-Job Parameter를 사용하기 위해선 항상 Spring Batch 전용 Scope를 선언해야만 하는데요.
-크게 `@StepScope`와 `@JobScope` 2가지가 있습니다.
-사용법은 간단한데, 아래와 같이 SpEL로 선언해서 사용하시면 됩니다.
-
-```java
-@Value("#{jobParameters[파라미터명]}")
-```
-
-> `jobParameters` 외에도 `jobExecutionContext`, `stepExecutionContext` 등도 SpEL로 사용할 수 있습니다.
-> @JobScope에선 `stepExecutionContext`는 사용할 수 없고, `jobParameters`와 `jobExecutionContext`만 사용할 수 있습니다.
-
-각각의 Scope에서 사용하는 샘플 코드는 아래와 같습니다.
-
-
-
-
-
-## [@StepScope](https://github.com/StepScope) & [@JobScope](https://github.com/JobScope) 소개
-
-Spring Batch는 `@StepScope`와 `@JobScope` 라는 아주 특별한 Bean Scope를 지원합니다.
-아시다시피, **Spring Bean의 기본 Scope는 singleton**인데요.
-그러나 아래처럼 Spring Batch 컴포넌트 (Tasklet, ItemReader, ItemWriter, ItemProcessor 등)에 `@StepScope`를 사용하게 되면
-
-![stepscope1](D:\springbatch\Spring Batch 가이드(Markdown)\images\99A2F9475B7607502D)
-
-Spring Batch가 Spring 컨테이너를 통해 지정된 **Step의 실행시점에 해당 컴포넌트를 Spring Bean으로 생성**합니다.
-마찬가지로 `@JobScope`는 **Job 실행시점**에 Bean이 생성 됩니다.
-즉, **Bean의 생성 시점을 지정된 Scope가 실행되는 시점으로 지연**시킵니다.
-
-> 어떻게 보면 MVC의 request scope와 비슷할 수 있겠습니다.
-> request scope가 request가 왔을때 생성되고, response를 반환하면 삭제되는것처럼, JobScope, StepScope 역시 Job이 실행되고 끝날때, Step이 실행되고 끝날때 생성/삭제가 이루어진다고 보시면 됩니다.
-
-이렇게 Bean의 생성시점을 어플리케이션 실행 시점이 아닌, Step 혹은 Job의 실행시점으로 지연시키면서 얻는 장점은 크게 2가지가 있습니다.
-
-첫째로, **JobParameter의 Late Binding**이 가능합니다.
-Job Parameter가 StepContext 또는 JobExecutionContext 레벨에서 할당시킬 수 있습니다.
-꼭 Application이 실행되는 시점이 아니더라도 Controller나 Service와 같은 **비지니스 로직 처리 단계에서 Job Parameter를 할당**시킬 수 있습니다.
-이 부분은 아래에서 좀 더 자세하게 예제와 함께 설명드리겠습니다.
-
-두번째로, 동일한 컴포넌트를 병렬 혹은 동시에 사용할때 유용합니다.
-Step 안에 Tasklet이 있고, 이 Tasklet은 멤버 변수와 이 멤버 변수를 변경하는 로직이 있다고 가정해봅시다.
-이 경우 `@StepScope` 없이 Step을 병렬로 실행시키게 되면 **서로 다른 Step에서 하나의 Tasklet을 두고 마구잡이로 상태를 변경**하려고 할것입니다.
-하지만 `@StepScope`가 있다면 **각각의 Step에서 별도의 Tasklet을 생성하고 관리하기 때문에 서로의 상태를 침범할 일이 없습니다**.
-
-## 5-3. Job Parameter 오해
-
-Job Parameters는 `@Value`를 통해서 가능합니다.
-그러다보니 여러가지 오해가 있을 수 있는데요.
-Job Parameters는 Step이나, Tasklet, Reader 등 Batch 컴포넌트 Bean의 생성 시점에 호출할 수 있습니다만, 정확히는 **Scope Bean을 생성할때만 가능**합니다.
-즉, **`@StepScope`, `@JobScope` Bean을 생성할때만 Job Parameters가 생성**되기 때문에 사용할 수 있습니다.
-
-예를 들어 아래와 같이 메소드를 통해 Bean을 생성하지 않고, 클래스에서 직접 Bean 생성을 해보겠습니다.
-Job과 Step의 코드에서 `@Bean`과 `@Value("#{jobParameters[파라미터명]}")`를 **제거**하고 `SimpleJobTasklet`을 생성자 DI로 받도록 합니다.
-
-> `@Autowired`를 쓰셔도 됩니다.
-
-![jobparameter1](D:\springbatch\Spring Batch 가이드(Markdown)\images\9994B94E5B76075129)
-
-그리고 `SimpleJobTasklet`은 아래와 같이 `@Component`와 `@StepScope`로 **Scope가 Step인 Bean**으로 생성합니다.
-이 상태에서 `@Value("#{jobParameters[파라미터명]}`를 Tasklet의 멤버변수로 할당합니다.
-
-![jobparameter2](D:\springbatch\Spring Batch 가이드(Markdown)\images\99C0984A5B76075126)
-
-이렇게 **메소드의 파라미터로 JobParameter를 할당받지 않고, 클래스의 멤버 변수로 JobParameter를 할당** 받도록 해도 실행해보시면!
-
-![jobparameter3](D:\springbatch\Spring Batch 가이드(Markdown)\images\994B8F365B76075126)
-
-정상적으로 JobParameter를 받아 사용할 수 있습니다.
-이는 **SimpleJobTasklet Bean이 `@StepScope`로 생성**되었기 때문입니다.
-
-반면에, 이 SimpleJobTasklet Bean을 일반 singleton Bean으로 생성할 경우 아래와 같이 `'jobParameters' cannot be found` 에러가 발생합니다.
-
-![jobparameter4](D:\springbatch\Spring Batch 가이드(Markdown)\images\99B8343A5B76075127)
-
-즉, Bean을 메소드나 클래스 어느 것을 통해서 생성해도 무방하나 Bean의 Scope는 Step이나 Job이어야 한다는 것을 알 수 있습니다.
-
-JobParameters를 사용하기 위해선 꼭 **`@StepScope`, `@JobScope`로 Bean을 생성**해야한다는 것을 잊지마세요.
-
-## 5-4. JobParameter vs 시스템 변수
-
-앞의 이야기를 보면서 아마 이런 의문이 있을 수 있습니다.
-
-- 왜 꼭 Job Parameter를 써야하지?
-- 기존에 Spring Boot에서 사용하던 여러 환경변수 혹은 시스템 변수를 사용하면 되지 않나?
-- CommandLineRunner를 사용한다면 `java jar application.jar -D파라미터`로 시스템 변수를 지정하면 되지 않나?
-
-자 그래서 왜 Job Parameter를 써야하는지 설명드리겠습니다.
-아래 2가지 코드를 한번 보겠습니다.
-
-### JobParameter
-
-```java
-@Bean
-@StepScope
-public FlatFileItemReader<Partner> reader(
-        @Value("#{jobParameters[pathToFile]}") String pathToFile){
-    FlatFileItemReader<Partner> itemReader = new FlatFileItemReader<Partner>();
-    itemReader.setLineMapper(lineMapper());
-    itemReader.setResource(new ClassPathResource(pathToFile));
-    return itemReader;
-}
-```
-
-### 시스템 변수
-
-> 여기에서 얘기하는 시스템 변수는 application.properties와 `-D` 옵션으로 실행하는 변수까지 포함합니다.
-
-```java
-@Bean
-@ConfigurationProperties(prefix = "my.prefix")
-protected class JobProperties {
-
-    String pathToFile;
-
-    ...getters/setters
-}
-
-@Autowired
-private JobProperties jobProperties;
-
-@Bean
-public FlatFileItemReader<Partner> reader() {
-    FlatFileItemReader<Partner> itemReader = new FlatFileItemReader<Partner>();
-    itemReader.setLineMapper(lineMapper());
-    String pathToFile = jobProperties.getPathToFile();
-    itemReader.setResource(new ClassPathResource(pathToFile));
-    return itemReader;
-}
-```
-
-위 2가지 방식에는 몇 가지 차이점이 있습니다.
-
-일단 첫번째로, 시스템 변수를 사용할 경우 **Spring Batch의 Job Parameter 관련 기능을 못쓰게** 됩니다.
-예를 들어, Spring Batch는 **같은 JobParameter로 같은 Job을 두 번 실행하지 않습니다**.
-하지만 시스템 변수를 사용하게 될 경우 이 기능이 전혀 작동하지 않습니다.
-또한 Spring Batch에서 자동으로 관리해주는 Parameter 관련 메타 테이블이 전혀 관리되지 않습니다.
-
-둘째, Command line이 아닌 다른 방법으로 Job을 실행하기가 어렵습니다.
-만약 실행해야한다면 **전역 상태 (시스템 변수 혹은 환경 변수)를 동적으로 계속해서 변경시킬 수 있도록** Spring Batch를 구성해야합니다.
-동시에 여러 Job을 실행하려는 경우 또는 테스트 코드로 Job을 실행해야할때 문제가 발생할 수 있습니다.
-
-특히 Job Parameter를 못쓰는 점은 큰 단점인데요.
-Job Parameter를 못쓴다는 것은 위에서도 언급한 **Late Binding을 못하게 된다**는 의미입니다.
-
-예를 들어 웹 서버가 있고, 이 웹서버에서 Batch를 수행한다고 가정해봅시다.
-외부에서 넘겨주는 파라미터에 따라 Batch가 다르게 작동해야한다면, 이를 시스템 변수로 풀어내는 것은 너무나 어렵습니다.
-하지만 아래와 같이 Job Parameter를 이용한다면 아주 쉽게 해결할 수 있습니다.
-
-
-
-
+TODO
 
 File,DB(JDBC,JPA),Redis,Kafka,MongoDB
 
-Listener
-
-Multi-Thread
 
 
+## Multi-Thread & Listener
+
+TODO
 
 
 
-#### Jib 활용 Containerizing
+## Retry & Tolerant
+
+TODO
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 별첨
+
+## *Spring Batch Application 전개 전략
+
+온라인, 온라인배치, 일반배치 그림추가
+
+## *Jib 활용 Containerizing
 
 Docker 실행.
 
@@ -449,13 +724,13 @@ Batch 5에 변경점이 많이 생겨 기존의 4버전과 다른 부분이 많�
 
 
 
-# 주요 변경 사항
+### 주요 변경 사항
 
-## JDK 17 기준선
+### JDK 17 기준선
 
 Spring Batch 5는 최소 버전으로 Java 17이 필요한 Spring Framework 6을 기반으로 합니다. 따라서 Spring Batch 5 애플리케이션을 실행하려면 Java 17+를 사용해야 합니다.
 
-## 종속성 업그레이드
+### 종속성 업그레이드
 
 Spring Batch 5는 전반적으로 Spring 종속성을 다음 버전으로 업데이트합니다.
 
@@ -477,7 +752,7 @@ Spring Batch 5는 전반적으로 Spring 종속성을 다음 버전으로 업데
 - `junit:junit`는 더 이상 필수 종속성이 아닙니다 `spring-batch-test`.
 - `com.fasterxml.jackson.core:jackson-core`이제 선택 사항입니다`spring-batch-core`
 
-## 데이터베이스 스키마 업데이트
+### 데이터베이스 스키마 업데이트
 
 #### 신탁
 
@@ -562,13 +837,13 @@ ALTER TABLE BATCH_STEP_EXECUTION ALTER COLUMN START_TIME DROP NOT NULL;
 
 
 
-## 인프라 Bean 구성`@EnableBatchProcessing`
+### 인프라 Bean 구성`@EnableBatchProcessing`
 
-### 작업 저장소/탐색기 구성 업데이트
+#### 작업 저장소/탐색기 구성 업데이트
 
 맵 기반 작업 저장소/탐색기 구현은 v4에서 더 이상 사용되지 않으며 v5에서 완전히 제거되었습니다. 대신 Jdbc 기반 구현을 사용해야 합니다. 사용자 정의 작업 저장소/탐색기 구현을 사용하지 않는 한 주석은 애플리케이션 컨텍스트에서 Bean이 필요한 `@EnableBatchProcessing`Jdbc 기반을 구성합니다 . Bean 은 H2, HSQL 등과 같은 내장형 데이터베이스를 참조하여 메모리 내 작업 저장소와 작동할 수 있습니다.`JobRepository``DataSource``DataSource`
 
-### 트랜잭션 관리자 빈 노출/구성
+#### 트랜잭션 관리자 빈 노출/구성
 
 버전 4.3까지 `@EnableBatchProcessing`주석은 애플리케이션 컨텍스트에서 트랜잭션 관리자 Bean을 노출했습니다. 이는 많은 경우에 편리했지만 트랜잭션 관리자가 무조건적으로 노출되면 사용자 정의 트랜잭션 관리자를 방해할 수 있습니다. 이번 릴리스에서는 `@EnableBatchProcessing`더 이상 애플리케이션 컨텍스트에 트랜잭션 관리자 Bean을 노출하지 않습니다. [이 변경 사항은 https://github.com/spring-projects/spring-batch/issues/816](https://github.com/spring-projects/spring-batch/issues/816) 문제와 관련이 있습니다 .
 
@@ -624,7 +899,7 @@ public class MyStepConfig {
 
 또한 트랜잭션 관리자는 `BatchConfigurer#getTransactionManager`. 트랜잭션 관리자는 의 구현 세부 사항이므로 `JobRepository`와 동일한 수준 `JobRepository`(예: 동일한 인터페이스)에서 구성할 수 없어야 합니다. 이번 릴리스에서는 `BatchConfigurer`인터페이스가 제거되었습니다. 필요한 경우 사용자 정의 트랜잭션 관리자는 의 속성으로 선언적으로 제공되거나 `@EnableBatchProcessing`를 재정의하여 프로그래밍 방식으로 제공될 수 있습니다 `DefaultBatchConfiguration#getTransactionManager()`. [이 변경 사항에 대한 자세한 내용은 https://github.com/spring-projects/spring-batch/issues/3942를](https://github.com/spring-projects/spring-batch/issues/3942) 확인하세요 .
 
-### JobBuilderFactory 및 StepBuilderFactory 빈 노출/구성
+#### JobBuilderFactory 및 StepBuilderFactory 빈 노출/구성
 
 `JobBuilderFactory`더 이상 애플리케이션 컨텍스트에서 빈으로 노출되지 않으며 `StepBuilderFactory`이제 생성한 각 빌더를 사용하기 위해 v5.2에서 제거되지 않습니다.
 
@@ -671,34 +946,34 @@ public class MyJobConfig {
 
 동일한 패턴을 사용하여 더 이상 사용되지 않는 의 사용을 제거할 수 있습니다 `StepBuilderFactory`. [이 변경 사항에 대한 자세한 내용은 https://github.com/spring-projects/spring-batch/issues/4188을](https://github.com/spring-projects/spring-batch/issues/4188) 확인하세요 .
 
-## 데이터 유형 업데이트
+### 데이터 유형 업데이트
 
 - 및 의 메트릭 카운터( `readCount`, `writeCount`등)가 에서 로 변경되었습니다 . 모든 getter 및 setter가 그에 따라 업데이트되었습니다.`org.springframework.batch.core.StepExecution``org.springframework.batch.core.StepContribution``int``long`
 - `skipCount`의 매개변수 가 에서 로 `org.springframework.batch.core.step.skip.SkipPolicy#shouldSkip`변경되었습니다 . 이는 이전 요점과 관련이 있습니다.`int``long`
 - `startTime`, `endTime`및 `createTime`의 필드 유형이 에서 `lastUpdated`로 `JobExecution`변경 `StepExecution`되었습니다 .`java.util.Date``java.time.LocalDateTime`
 
-## 관측 가능성 업데이트
+### 관측 가능성 업데이트
 
 - 마이크로미터가 1.10 버전으로 업데이트되었습니다.
 - 이제 모든 태그 앞에 미터 이름이 붙습니다. 예를 들어, 타이머의 태그 `spring.batch.job`이름 은 버전 4.x입니다 `name`. `status`버전 5에서는 해당 태그의 이름이 각각 `spring.batch.job.name`및 로 지정됩니다 `spring.batch.job.status`.
 - 클래스 `BatchMetrics`(내부 전용)가 패키지 `org.springframework.batch.core.metrics`로 이동되었습니다 `org.springframework.batch.core.observability`.
 
-## 실행 컨텍스트 직렬화 업데이트
+### 실행 컨텍스트 직렬화 업데이트
 
 v5부터 기본값이 에서 으로 `ExecutionContextSerializer`변경되었습니다 . Base64에서 컨텍스트를 직렬화/역직렬화하도록 기본 실행 컨텍스트 직렬 변환기가 업데이트되었습니다.`JacksonExecutionContextStringSerializer``DefaultExecutionContextSerializer`
 
 Jackson에 대한 의존성은 선택 사항이 되었습니다. `JacksonExecutionContextStringSerializer`를 사용하려면 `jackson-core`클래스패스에 를 추가해야 합니다.
 
-## SystemCommandTasklet 업데이트
+### SystemCommandTasklet 업데이트
 
 이번 릴리스에서는 가 `SystemCommandTasklet`다시 검토되어 다음과 같이 변경되었습니다.
 
 - `CommandRunner`태스크릿 실행에서 명령 실행을 분리하기 위해 명명된 새로운 전략 인터페이스가 도입되었습니다. 기본 구현은 API를 `JvmCommandRunner`사용하여 `java.lang.Runtime#exec`시스템 명령을 실행하는 것입니다. 이 인터페이스는 다른 API를 사용하여 시스템 명령을 실행하도록 구현될 수 있습니다.
 - 이제 명령을 실행하는 메서드는 `String`명령과 해당 인수를 나타내는 배열을 허용합니다. 더 이상 명령을 토큰화하거나 사전 처리를 수행할 필요가 없습니다. 이러한 변경으로 인해 API가 더욱 직관적이고 오류 발생 가능성이 낮아졌습니다.
 
-## 업데이트를 처리하는 작업 매개변수
+### 업데이트를 처리하는 작업 매개변수
 
-### 작업 매개변수로 모든 유형 지원
+#### 작업 매개변수로 모든 유형 지원
 
 이번 변경으로 v4에서와 같이 미리 정의된 4가지 유형(long, double, string, date)뿐만 아니라 모든 유형을 작업 매개변수로 사용할 수 있는 지원이 추가되었습니다. 주요 변경 사항은 다음과 같습니다.
 
@@ -721,7 +996,7 @@ Jackson에 대한 의존성은 선택 사항이 되었습니다. `JacksonExecuti
 
 이 변경 사항은 작업 매개변수가 데이터베이스에서 유지되는 방식에 영향을 미쳤습니다(미리 정의된 각 유형에 대해 더 이상 4개의 고유 열이 없습니다). [DDL 변경 사항 은 BATCH_JOB_EXECUTION_PARAMS의 열 변경 사항을](https://github.com/spring-projects/spring-batch/wiki/Spring-Batch-5.0-Migration-Guide#column-change-in-batch_job_execution_params) 확인하세요 . 이제 매개변수 유형의 정규화된 이름이 `String`매개변수 값뿐만 아니라 로 유지됩니다. 문자열 리터럴은 표준 Spring 변환 서비스를 사용하여 매개변수 유형으로 변환됩니다. 표준 변환 서비스는 사용자 특정 유형을 문자열 리터럴로 변환하는 데 필요한 변환기로 강화될 수 있습니다.
 
-### 기본 작업 매개변수 변환
+#### 기본 작업 매개변수 변환
 
 v4의 작업 매개변수 기본 표기법은 다음과 같이 지정되었습니다.
 
@@ -735,7 +1010,7 @@ v4의 작업 매개변수 기본 표기법은 다음과 같이 지정되었습�
 
 v5에는 작업 매개변수를 지정하는 두 가지 방법이 있습니다.
 
-#### 기본 표기법
+##### 기본 표기법
 
 기본 표기법은 다음과 같이 지정됩니다.
 
@@ -747,7 +1022,7 @@ parameterName=parameterValue,parameterType,identificationFlag
 
 `parameterType`매개변수 유형의 완전한 이름은 어디에 있습니까? Spring Batch는 `DefaultJobParametersConverter`이 표기법을 지원하는 를 제공합니다.
 
-#### 확장 표기법
+##### 확장 표기법
 
 기본 표기법은 대부분의 사용 사례에 적합하지만 예를 들어 값에 쉼표가 포함되어 있으면 불편할 수 있습니다. 이 경우 Spring Boot의 [Json 애플리케이션 속성](https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.external-config.application-json) 에서 영감을 받아 다음과 같이 지정된 확장 표기법을 사용할 수 있습니다.
 
@@ -759,7 +1034,7 @@ parameterName='{"value": "parameterValue", "type":"parameterType", "identifying"
 
 `parameterType`매개변수 유형의 완전한 이름은 어디에 있습니까? Spring Batch는 `JsonJobParametersConverter`이 표기법을 지원하는 를 제공합니다.
 
-### 기록 데이터 액세스 영향
+##### 기록 데이터 액세스 영향
 
 작업 매개변수 처리에 대한 이러한 주요 변경으로 인해 배치 메타데이터를 탐색하도록 설계된 일부 API는 v4에서 시작된 작업 인스턴스에 사용되어서는 **안 됩니다.** 예를 들어:
 
@@ -778,6 +1053,7 @@ https://europani.github.io/spring/2023/06/26/052-spring-batch-version5.html
 https://github.com/spring-projects/spring-batch/wiki/Spring-Batch-5.0-Migration-Guide
 https://docs.spring.io/spring-batch/docs/current/reference/html/spring-batch-intro.html
 https://docs.spring.io/spring-batch/docs/current/reference/html/spring-batch-intro.html
+https://loosie.tistory.com/838
 ```
 
 
