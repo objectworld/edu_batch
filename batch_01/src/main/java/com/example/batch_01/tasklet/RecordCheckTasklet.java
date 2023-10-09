@@ -21,8 +21,8 @@ public class RecordCheckTasklet implements Tasklet {
     @Override
     public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) {
         logger.info("Tasklet executed!");
-        int records = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM tatbestand;", Integer.class);
-        logger.info("Number of Records: " + records);
+        int records = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM user;", Integer.class);
+        logger.info("Number of USER Records: " + records);
         return RepeatStatus.FINISHED;
     }
 }

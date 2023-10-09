@@ -23,12 +23,8 @@ public class JobCompletionNotificationListener extends JobExecutionListenerSuppo
     public void afterJob(JobExecution jobExecution) {
         if(jobExecution.getStatus() == BatchStatus.COMPLETED) {
             log.info("JOB Completed! Check the Number of Records.");
-            int count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM tatbestand", Integer.class);
-            if(count == 2492) {
-                log.info("Correct number of records 2492 found. Great!");
-            } else {
-                log.info("Something went wrong, wrong number of records found: " + count);
-            }
+            int count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM user", Integer.class);
+            log.info("number of records found: " + count);
         }
     }
 }
