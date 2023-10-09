@@ -347,11 +347,11 @@ ItemProcessor는 데이터를 가공 (혹은 처리)한다. 해당 기능은 필
 
 ## 1.4 **Spring Batch 구성요소**
 
-### **Job**
+### **1.4.1 Job**
 
 job은 전체 배치 프로세스를 캡슐화한 엔티티다. 다른 스프링 프로젝트와 마찬가지로, `Job`은 XML 기반이나 자바 기반 설정을 둘 다 지원한다. 이 설정은 “job 설정”이라고도 할 수 있지만, Job은 아래 다이어그램에서 보듯 가장 상위 개념 일 뿐이다.![img](https://blog.kakaocdn.net/dn/lyFtV/btrr0JjLRrm/NW9YDd8PAQZJXmLRb2NbSK/img.png)
 
-#### JobInstance
+#### 1.4.1.1 JobInstance
 
 
 
@@ -401,7 +401,7 @@ JobName + JobParamter는 중복된 데이터는 가질수 없습니다.
 
  
 
-#### JobParameter
+#### 1.4.1.2JobParameter
 
 \- Job을 실행할 때 함께 포함되어 사용되는 파라미터를 가진 도메인 객체
 
@@ -417,7 +417,7 @@ JobName + JobParamter는 중복된 데이터는 가질수 없습니다.
 
   
 
-#### JobExecution
+#### 1.4.1.3 JobExecution
 
 JobLauncher : Job을 실행시키는 주체
 
@@ -507,7 +507,7 @@ job이 실패했고, 밤새도록 문제를 찾느라 ‘배치 윈도우’가 
 
 ------
 
-### **Step**
+### **1.4.2 Step**
 
 Job의 실행 단계를 나타내는 것으로, Tasklet 또는 Chunk 지향 처리 방식으로 구성되어 있다.
 
@@ -543,7 +543,7 @@ Job의 실행 단계를 나타내는 것으로, Tasklet 또는 Chunk 지향 처�
 
  
 
-#### 3. StepExecution
+#### 1.4.3 StepExecution
 
 \- Step에 대한 한번의 시도를 의미하는 객체로서 Step 실행 중에 발생한 정보들을 저장하는 객체
 
@@ -786,27 +786,7 @@ show databases;
 use cjs_db
 
 
-CREATE TABLE tatbestand(  
-    id INT NOT NULL AUTO_INCREMENT,  
-    tattag DATE,  
-    tatzeit VARCHAR(100) NOT NULL,  
-    tatort VARCHAR(40) NOT NULL,  
-    tatort2 VARCHAR(100) NOT NULL,  
-    tatbestand VARCHAR(100) NOT NULL,  
-    betrag INT NOT NULL,
-    PRIMARY KEY ( id )
-);
 
-CREATE TABLE user(  
-    id INT NOT NULL ,  
-    first_name VARCHAR(100) NOT NULL,  
-    last_name VARCHAR(40) NOT NULL,  
-    email VARCHAR(100) NOT NULL,  
-    gender VARCHAR(100) NOT NULL,  
-    ip_address VARCHAR(100) NOT NULL,  
-    country_code VARCHAR(100) NOT NULL,  
-    PRIMARY KEY ( id )
-);
 ```
 
 
@@ -850,7 +830,7 @@ public class BatchProcessingApplication {
 
 
 
-### jobname 설정
+### 2.2.2 jobname 설정
 
 spring.batch.job.name: ${job.name:NONE}
 
@@ -864,7 +844,7 @@ Spring Batch가 실행될때, **Program arguments로 `job.name` 값이 넘어오
 
 
 
-## MetaTable
+## 2.3 MetaTable
 
 **/org/springframework/batch/core/schema-\*.sql**
 
@@ -876,7 +856,7 @@ https://docs.spring.io/spring-batch/docs/3.0.x/reference/html/metaDataSchema.htm
 
 
 
-### Job 관련 테이블
+### 2.3.1 Job 관련 테이블
 
 #### BATCH_JOB_INSTANCE
 
@@ -941,7 +921,7 @@ https://docs.spring.io/spring-batch/docs/3.0.x/reference/html/metaDataSchema.htm
 
 
 
-### Step 관련 테이블
+### 2.3.2 Step 관련 테이블
 
 #### BATCH_STEP_EXECUTION
 
@@ -988,7 +968,7 @@ https://docs.spring.io/spring-batch/docs/3.0.x/reference/html/metaDataSchema.htm
 
 
 
-## BatchAutoConfiguration
+## 2.4 BatchAutoConfiguration
 
 스프링 배치가 초기화될 때 자동으로 실행되는 설정 클래스
 
@@ -1030,15 +1010,15 @@ JobBuilderFactory와 StepBuildFactory 생성
 
 
 
-## Job 설정
+## 2.5 Job 설정
 
-### JobLauncherApplicationRunner [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#joblauncherapplicationrunner)
+#### JobLauncherApplicationRunner [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#joblauncherapplicationrunner)
 
 - Spring Batch 작업을 시작하는 ApplicationRunner로서 BatchAutoConfiguration에서 생성됩니다.
 - 스프링 부트에서 제공하는 ApplicationRunner의 구현체로 애플리케이션이 정상적으로 구동되자 마자 실행됩니다.
 - 기본적으로 빈으로 등록된 모든 Job을 실행시킵니다.
 
-### BatchProperties [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#batchproperties)
+#### BatchProperties [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#batchproperties)
 
 application.yml에서 Spring Batch의 환경 설정을 할 수 있습니다.
 
@@ -1077,7 +1057,7 @@ spring:
 
 
 
-## JobBuilderFactory, JobBuilder [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#jobbuilderfactory-jobbuilder)
+#### JobBuilderFactory, JobBuilder [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#jobbuilderfactory-jobbuilder)
 
 ------
 
@@ -1096,7 +1076,7 @@ spring:
     - FlowJob을 생성하는 Builder 클래스
     - 내부적으로 FlowBuilder를 반환함으로써 Flow 실행과 관련된 여러 설정 API를 제공
 
-### 아키텍처 [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#아키텍처)
+#### 아키텍처 [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#아키텍처)
 
 ![그림1](https://backtony.github.io/assets/img/post/spring/batch/3/3-1.PNG)
 
@@ -1107,7 +1087,7 @@ spring:
 
 3. SimpleJobBuilder와 JobFlowBuilder는 위 그림과 같이 다양한 API를 제공합니다.
 
-### 상속 구조 [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#상속-구조)
+#### 상속 구조 [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#상속-구조)
 
 ![그림2](https://backtony.github.io/assets/img/post/spring/batch/3/3-2.PNG)
 
@@ -1120,22 +1100,22 @@ SimpleJobBuilder와 FlowJobBuilder는 각각의 Job을 생성하게 되고 JobRe
 
 
 
-## SimpleJob [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#simplejob)
+#### SimpleJob [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#simplejob)
 
 ------
 
-### 기본 개념 [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#기본-개념)
+#### 기본 개념 [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#기본-개념)
 
 - SimpleJob은 **Step을 실행시키는 Job 구현체로서 SimpleJobBuilder에 의해 생성** 됩니다.
 - 여러 단계의 Step으로 구성할 수 있으며 Step을 순차적으로 실행시킵니다.
 - 모든 step의 실행이 성공적으로 완료되어야 Job이 성공적으로 완료됩니다.
 - 맨 마지막에 실행한 Step의 BatchStatus가 Job의 최종 BatchStatus가 됩니다.
 
-### 기본 API [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#기본-api)
+#### 기본 API [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#기본-api)
 
 ![그림3](https://backtony.github.io/assets/img/post/spring/batch/3/3-3.PNG)
 
-### validator() [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#validator)
+#### validator() [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#validator)
 
 ![그림4](https://backtony.github.io/assets/img/post/spring/batch/3/3-4.PNG)
 
@@ -1200,7 +1180,7 @@ public class HelloJobConfiguration {
 
 validator를 한 개이상 등록하게 되면 마지막에 등록한 것으로 처리된다.
 
-### preventRestart() [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#preventrestart)
+#### preventRestart() [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#preventrestart)
 
 - 기본적으로 Job은 실패할 경우 재시작이 가능한데(기본값 true) 해당 옵션을 false로 주면 Job의 재시작을 지원하지 않습니다.
 - false인 상태에서 재시작하려고 시도하면 JobRestartException이 발생합니다.
@@ -1230,7 +1210,7 @@ public class HelloJobConfiguration {
 위 코드처럼 preventRestart()를 호출하면 옵션이 false인 상태로 들어갑니다.
 preventRestart()를 호출하지 않으면 기본값 true로 설정됩니다.
 
-### incrementer() [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#incrementer)
+#### incrementer() [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#incrementer)
 
 JobParameters로 잡이 성공했다면 기본적으로 동일한 JobParameters로 동일한 Job을 실행시킬 수 없습니다.
 하지만 같은 JobParemeters로 계속 Job을 실행해야 할 때가 있습니다.
@@ -1275,7 +1255,7 @@ public class HelloJobConfiguration {
 
 구현체로 지원하는 RunIdIncrementer()의 경우 run.id 라는 키로 실행될 때마다 1부터 증가하여 파라미터에 값을 채워넣습니다.
 
-### SimpleJob 흐름도 [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#simplejob-흐름도)
+#### SimpleJob 흐름도 [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#simplejob-흐름도)
 
 ![그림6](https://backtony.github.io/assets/img/post/spring/batch/3/3-6.PNG)
 
@@ -1458,7 +1438,7 @@ Job Parameter를 못쓴다는 것은 위에서도 언급한 **Late Binding을 �
 
 ## Step설정
 
-## StepBuilderFactory와 StepBuilder [Permalink](https://backtony.github.io/spring/2022-01-22-spring-batch-4/#stepbuilderfactory와-stepbuilder)
+### StepBuilderFactory와 StepBuilder [Permalink](https://backtony.github.io/spring/2022-01-22-spring-batch-4/#stepbuilderfactory와-stepbuilder)
 
 ------
 
@@ -1498,7 +1478,7 @@ StepBuilder는 API 설정에 따라서 하위 빌더들을 생성하는 역할�
 
 
 
-## TaskletStep [Permalink](https://backtony.github.io/spring/2022-01-22-spring-batch-4/#taskletstep)
+### TaskletStep [Permalink](https://backtony.github.io/spring/2022-01-22-spring-batch-4/#taskletstep)
 
 ------
 
@@ -1673,7 +1653,7 @@ StepExecution에 Step의 완료 상태를 업데이트합니다.
 
 
 
-## JobStep [Permalink](https://backtony.github.io/spring/2022-01-22-spring-batch-4/#jobstep)
+### JobStep [Permalink](https://backtony.github.io/spring/2022-01-22-spring-batch-4/#jobstep)
 
 ------
 
@@ -1772,15 +1752,15 @@ JobStep의 경우 Step 안에서 Job이 실행되기 때문에 Job이 실행되�
 
 
 
-### Next 
 
-### Flow 
 
-## FlowJob [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#flowjob)
+## Flow 
+
+### FlowJob [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#flowjob)
 
 ------
 
-### 기본 개념 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#기본-개념)
+기본 개념 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#기본-개념)
 
 - Step을 특정한 상태에 따라 흐름을 전환하도록 구성할 수 있으며 FlowJobBuilder에 의해 생성됩니다.
   - Step이 실패하더라도 Job은 실패로 끝나지 않도록 해야 하는 경우
@@ -1789,7 +1769,7 @@ JobStep의 경우 Step 안에서 Job이 실행되기 때문에 Job이 실행되�
 - Flow와 Job의 흐름을 구성하는데만 관여하고 실제 로직은 Step에서 이뤄집니다.
 - 내부적으로 SimpleFlow 객체를 포함하고 있으며 job 실행 시 호출됩니다.
 
-### 배치 상태 유형 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#배치-상태-유형)
+배치 상태 유형 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#배치-상태-유형)
 
 FlowJob은 조건에 따라 분기되어 실행되는데 그에 대한 조건으로 상태를 이용합니다.
 
@@ -2101,7 +2081,7 @@ public class HelloJobConfiguration {
 
 
 
-## JobExecutionDecider [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#jobexecutiondecider)
+### JobExecutionDecider [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#jobexecutiondecider)
 
 ------
 
@@ -2194,7 +2174,7 @@ public class CustomDecider implements JobExecutionDecider {
 
 
 
-## FlowJob 아키텍처 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#flowjob-아키텍처)
+### FlowJob 아키텍처 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#flowjob-아키텍처)
 
 ------
 
@@ -2209,7 +2189,7 @@ FlowExecutor가 SimpleFlow를 실행시킵니다.
 
 
 
-## SimpleFlow [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#simpleflow)
+### SimpleFlow [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#simpleflow)
 
 ------
 
@@ -2402,7 +2382,7 @@ Job의 BatchStatus는 최종 흐름의 성공 여부에 따라 값이 반영됩�
 
 
 
-## FlowStep [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#flowstep)
+### FlowStep [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#flowstep)
 
 ------
 
@@ -2480,7 +2460,7 @@ public class HelloJobConfiguration {
 
 
 
-## @JobScope와 @StepScope [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#jobscope와-stepscope)
+### @JobScope와 @StepScope [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#jobscope와-stepscope)
 
 ------
 
@@ -2702,7 +2682,7 @@ TODO
 
 
 
-## ChunkOrientedTasklet [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#chunkorientedtasklet)
+### ChunkOrientedTasklet [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#chunkorientedtasklet)
 
 ------
 
@@ -2853,7 +2833,7 @@ TODO
 
 
 
-## 최종 아키텍처 [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#최종-아키텍처)
+### 최종 아키텍처 [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#최종-아키텍처)
 
 ------
 
@@ -2913,7 +2893,7 @@ for(int i=0; i<totalSize; i+=chunkSize){ // chunkSize 단위로 묶어서 처리
 **chunkSize별로 묶어서 처리**된다는 의미가 이해가 되셨나요?
 자 그럼 이제 Chunk 지향 처리가 어떻게 되고 있는지 실제 Spring Batch 내부 코드를 보면서 알아보겠습니다.
 
-## 6-2. ChunkOrientedTasklet 엿보기
+### 6-2. ChunkOrientedTasklet 엿보기
 
 Chunk 지향 처리의 전체 로직을 다루는 것은 `ChunkOrientedTasklet` 클래스입니다.
 클래스 이름만 봐도 어떤 일을 하는지 단번에 알 수 있을것 같습니다.
@@ -2944,7 +2924,7 @@ Chunk 단위로 작업하기 위한 전체 코드가 이곳에 있다고 보시�
 
 자 그럼 이렇게 쌓아준 데이터를 어떻게 가공하고 저장하는지 한번 확인해보겠습니다.
 
-## 6-3. SimpleChunkProcessor 엿보기
+### 6-3. SimpleChunkProcessor 엿보기
 
 Processor와 Writer 로직을 담고 있는 것은 `ChunkProcessor` 가 담당하고 있습니다.
 
@@ -3004,7 +2984,7 @@ Processor와 Writer 로직을 담고 있는 것은 `ChunkProcessor` 가 담당�
 자 Chunk 지향 처리에 대해 실제 코드를 보면서 어떻게 처리되는지 알아보았습니다.
 아래에서는 ChunkSize에 대한 오해를 한번 풀어보겠습니다.
 
-## 6-4. Page Size vs Chunk Size
+### 6-4. Page Size vs Chunk Size
 
 기존에 Spring Batch를 사용해보신 분들은 아마 PagingItemReader를 많이들 사용해보셨을 것입니다.
 PagingItemReader를 사용하신 분들 중 간혹 Page Size와 Chunk Size를 같은 의미로 오해하시는 분들이 계시는데요.
@@ -3075,16 +3055,16 @@ File,DB(JDBC,JPA),Redis,Kafka,MongoDB
 
 
 
-## & Listener
+## Listener
 
-## Listener [Permalink](https://backtony.github.io/spring/2022-01-30-spring-batch-12/#listener)
+### Listener [Permalink](https://backtony.github.io/spring/2022-01-30-spring-batch-12/#listener)
 
 ------
 
 배치 흐름 중에 Job, Step, Chunk 단계의 실행 전후에 발생하는 이벤트를 받아 용도에 맞게 활용할 수 있도록 제공하는 인터셉터 개념의 클래스입니다.
 각 단계별로 로그기록을 남기거나 소요된 시간을 계산하거나 실행상태 정보들을 참조 및 조회할 수 있습니다.
 
-### 종류 [Permalink](https://backtony.github.io/spring/2022-01-30-spring-batch-12/#종류)
+종류 [Permalink](https://backtony.github.io/spring/2022-01-30-spring-batch-12/#종류)
 
 - Job
   - JobExecutionListener : Job 실행 전후
@@ -3103,7 +3083,7 @@ File,DB(JDBC,JPA),Redis,Kafka,MongoDB
 
 
 
-## JobExecutionListener / StepExecutionListener [Permalink](https://backtony.github.io/spring/2022-01-30-spring-batch-12/#jobexecutionlistener--stepexecutionlistener)
+### JobExecutionListener / StepExecutionListener [Permalink](https://backtony.github.io/spring/2022-01-30-spring-batch-12/#jobexecutionlistener--stepexecutionlistener)
 
 ------
 
@@ -3229,7 +3209,7 @@ public class CustomJobAnnotationExecutionListener {
 
 
 
-## ChunkListener / ItemReadListener / ItemProcessorListener / ItemWriterListener [Permalink](https://backtony.github.io/spring/2022-01-30-spring-batch-12/#chunklistener--itemreadlistener--itemprocessorlistener--itemwriterlistener)
+### ChunkListener / ItemReadListener / ItemProcessorListener / ItemWriterListener [Permalink](https://backtony.github.io/spring/2022-01-30-spring-batch-12/#chunklistener--itemreadlistener--itemprocessorlistener--itemwriterlistener)
 
 ------
 
@@ -3401,7 +3381,7 @@ public class CustomItemWriterListener implements ItemWriteListener<Customer2> {
 
 ## Retry & Tolerant
 
-## Repeat [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#repeat)
+### Repeat [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#repeat)
 
 ------
 
@@ -3542,7 +3522,7 @@ process 부분만 따로 떼어내서 여러 정책을 함께 사용하는 방�
 
 
 
-## FaultTolerant [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#faulttolerant)
+### FaultTolerant [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#faulttolerant)
 
 ------
 
@@ -3563,7 +3543,7 @@ FaultTolerant 구조는 청크 기반의 프로세스 기반 위에 Skip과 Retr
 
 ![그림4](https://backtony.github.io/assets/img/post/spring/batch/10/10-4.PNG)
 
-### Skip [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#skip)
+Skip [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#skip)
 
 - Skip은 데이터를 처리하는 동안 설정된 Exception이 발생했을 경우, 해당 데이터 처리를 건너뛰는 기능입니다.
 - 데이터의 사소한 오류에 대해 Step의 실패처리 대신 Skip함으로써, 배치수행의 빈번한 실패를 줄일 수 있습니다.
@@ -3821,7 +3801,7 @@ itemReader : 10
 
 예외가 발생하고 난 후 itemProcessor는 itemWriter로 리스트가 아니라 한건씩만 보내서 처리하고 있는 것을 확인할 수 있습니다.
 
-### Retry [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#retry)
+Retry [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#retry)
 
 - ItemProcessor, ItemWriter에서 설정된 Exception이 발생했을 때, 지정한 정책에 따라 데이터 처리를 재시도하는 기능입니다.
 - ItemReader에서는 지원하지 않습니다.
@@ -4305,7 +4285,7 @@ doWithRetry에는 프로세서에서 할 일반적인 작업을 명시하고 rec
 
 ## Multi-Thread 
 
-## 단일 스레드 vs 멀티 스레드 [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#단일-스레드-vs-멀티-스레드)
+### 단일 스레드 vs 멀티 스레드 [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#단일-스레드-vs-멀티-스레드)
 
 ------
 
@@ -4318,7 +4298,7 @@ doWithRetry에는 프로세서에서 할 일반적인 작업을 명시하고 rec
 
 
 
-## 스프링 배치 스레드 모델 [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#스프링-배치-스레드-모델)
+### 스프링 배치 스레드 모델 [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#스프링-배치-스레드-모델)
 
 ------
 
@@ -4338,7 +4318,7 @@ doWithRetry에는 프로세서에서 할 일반적인 작업을 명시하고 rec
 
 
 
-## AsyncItemProcessor / AsyncItemWriter [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#asyncitemprocessor--asyncitemwriter)
+### AsyncItemProcessor / AsyncItemWriter [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#asyncitemprocessor--asyncitemwriter)
 
 ------
 
@@ -4471,7 +4451,7 @@ Customer 데이터를 프로세서에서 Customer2객체로 전환하여 Writer�
 
 
 
-## Multi-thread Step [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#multi-thread-step)
+### Multi-thread Step [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#multi-thread-step)
 
 ------
 
@@ -4563,7 +4543,7 @@ public class HelloJobConfiguration {
 
 코드는 동기 코드에서 taskExecutor세팅만 추가해주면 됩니다.
 
-## Parallel Steps [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#parallel-steps)
+### Parallel Steps [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#parallel-steps)
 
 ------
 
@@ -4582,7 +4562,7 @@ public class HelloJobConfiguration {
 
 
 
-## Patitioning [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#patitioning)
+### Patitioning [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#patitioning)
 
 ------
 
@@ -4821,7 +4801,7 @@ public JpaPagingItemReader<? extends Customer> customItemReader(
 
 
 
-## SynchronizedItemStreamReader [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#synchronizeditemstreamreader)
+### SynchronizedItemStreamReader [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#synchronizeditemstreamreader)
 
 ------
 
