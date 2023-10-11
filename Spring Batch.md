@@ -411,10 +411,7 @@ job은 전체 배치 프로세스를 캡슐화한 엔티티다. 다른 스프링
 
 ```
 JobInstance`는 로드되는 데이터와는 아무런 관련이 없다. 데이터가 로드되는 방법은 전적으로 `ItemReader` 구현에 달려있다. 예를 들어 앞에서 나온 EndOfDay 케이스에서는, 데이터에 배치를 실행해야 하는 날짜를 의미하는 컬럼이 있을 것이다. 즉 1월 1일 실행은 1일 데이터만 로드하고, 1월 2일 실행은 2일 데이터만 사용할 것이다. 이러한 결정은 비지니스적 요구사항일 가능성이 크므로 `ItemReader`가 결정하도록 설계되었다. 그러나 `JobInstance` 재사용 여부는 이전 실행에서 사용된 상태(`ExecutionContext`는 이번 챕터의 뒷부분에 나온다)를 그대로 사용할지 말지를 결정한다. 새 `JobInstance를 사용한다는것은 처음부터 시작 하는것을 의미하고 이미 있는 instance를 쓴다는것은 멈추었던 곳에서 부터 시작 을 의미한다.
-
 ```
-
-
 
 
 
@@ -991,25 +988,21 @@ https://docs.spring.io/spring-batch/docs/3.0.x/reference/html/metaDataSchema.htm
 
 ## 2.4 Job 설정
 
-#### JobLauncherApplicationRunner [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#joblauncherapplicationrunner)
+### 2.4.1 JobLauncherApplicationRunner
 
 - Spring Batch 작업을 시작하는 ApplicationRunner로서 BatchAutoConfiguration에서 생성됩니다.
 - 스프링 부트에서 제공하는 ApplicationRunner의 구현체로 애플리케이션이 정상적으로 구동되자 마자 실행됩니다.
 - 기본적으로 빈으로 등록된 모든 Job을 실행시킵니다.
 
-#### BatchProperties [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#batchproperties)
+**BatchProperties**
 
-application.yml에서 Spring Batch의 환경 설정을 할 수 있습니다.
+application.properties 에서 Spring Batch의 환경 설정을 할 수 있습니다.
 
-```
-spring:
-  batch:
-    job:
-      enabled: true 
-      names: ${job.name:NONE} 
-    jdbc:
-      initialize-schema: always
-      table-prefix: SYSTEM_ 
+```properties
+spring.batch.job.enabled=true
+spring.batch.job.names=${job.name:NONE} 
+spring.batch.jdbc.initialize-schema = ALWAYS
+#spring.batch.jdbc.table-prefix: SYSTEM_
 ```
 
 
@@ -1036,13 +1029,13 @@ spring:
 
 
 
-#### JobBuilderFactory, JobBuilder [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#jobbuilderfactory-jobbuilder)
+### 2.4.2 JobBuilder 
 
 ------
 
 스프링 배치는 Job을 쉽게 생성 및 설정할 수 있도록 Util 성격의 빌더 클래스들을 제공합니다.
 
-- JobBuilderFactory
+- JobBuilderFactory(v5.0 이후 deprecated)
   - JobBuilder를 생성하는 팩토리 클래스로 get 메서드를 제공합니다.
   - JobBuilderFactory.get(“jobName”)
     - 내부적으로 JobBuilder가 jobName을 잡의 이름으로 하여 잡을 생성하도록 로직이 구성되어 있습니다.
@@ -1055,46 +1048,44 @@ spring:
     - FlowJob을 생성하는 Builder 클래스
     - 내부적으로 FlowBuilder를 반환함으로써 Flow 실행과 관련된 여러 설정 API를 제공
 
-#### 아키텍처 [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#아키텍처)
 
-![그림1](https://backtony.github.io/assets/img/post/spring/batch/3/3-1.PNG)
 
-1. JobBuilderFactory에서 get메서드를 통해 JobBuilder 클래스를 생성합니다.
+#### 2.4.2.1 아키텍처
 
-2-1. JobBuilder에서 start(step)를 사용하면 JobBuilder 내부적으로 SimpleJobBuilder를 생성하여 SimpleJob을 생성합니다.
-2-2. JobBuilder에서 start(flow) 또는 flow(step)를 사용하면 JobBuilder 내부적으로 FlowJobBuilder를 생성하여 FlowJob을 생성합니다. FlowJobBuilder는 내부적으로 JobFlowBuilder 클래스를 생성하여 Flow를 생성합니다.
+![image-20231012003308596](C:\Users\CJS\AppData\Roaming\Typora\typora-user-images\image-20231012003308596.png)
 
-3. SimpleJobBuilder와 JobFlowBuilder는 위 그림과 같이 다양한 API를 제공합니다.
+- JobBuilder에서 start(step)를 사용하면 JobBuilder 내부적으로 SimpleJobBuilder를 생성하여 SimpleJob을 생성합니다.
+- JobBuilder에서 start(flow) 또는 flow(step)를 사용하면 JobBuilder 내부적으로 FlowJobBuilder를 생성하여 FlowJob을 생성합니다. 
+- FlowJobBuilder는 내부적으로 JobFlowBuilder 클래스를 생성하여 Flow를 생성합니다.
+- SimpleJobBuilder와 JobFlowBuilder는 위 그림과 같이 다양한 API를 제공합니다.
 
-#### 상속 구조 [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#상속-구조)
 
-![그림2](https://backtony.github.io/assets/img/post/spring/batch/3/3-2.PNG)
 
-JobBuilderFactory는 JobBuilder 클래스를 생성하는 역할을 합니다.
+#### 2.4.2.2 상속 구조![image-20231012012444838](C:\Users\CJS\AppData\Roaming\Typora\typora-user-images\image-20231012012444838.png)
+
+
+
 JobBuilder 클래스는 JobBuilderHelper를 상속받고 있습니다.
-JobBuilderHelper 클래스는 내부 static 클래스로 CommonJobProperties를 갖고 있으며 이를 필드값으로 갖고 있는데 Job을 생성하는 공통적인 내용을 갖고 있다고 보면 됩니다.
+JobBuilderHelper 클래스는 내부 static 클래스로 CommonJobProperties를 갖고 있으며 이를 필드값으로 갖고 있는데 Job을 생성하는 공통적인 내용을 갖고 있다
 JobFactory에서 JobBuilder를 생성할 때 생성자의 인자로 JobRepository를 넘기는데 이게 JobBuilder에 CommonJobProperties에 담기게 됩니다.
 JobBuilder가 생성하는 SimpleJobBuilder와 FlowJobBuilder는 JobBuilderHelper를 상속받고 있습니다.
 SimpleJobBuilder와 FlowJobBuilder는 각각의 Job을 생성하게 되고 JobRepository는 빌더 클래스를 통해 Job 객체에 전달되어 메타데이터를 기록하는데 사용됩니다.
 
 
 
-#### SimpleJob [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#simplejob)
-
-------
-
-#### 기본 개념 [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#기본-개념)
+#### 2.4.2.3 SimpleJob
 
 - SimpleJob은 **Step을 실행시키는 Job 구현체로서 SimpleJobBuilder에 의해 생성** 됩니다.
+
 - 여러 단계의 Step으로 구성할 수 있으며 Step을 순차적으로 실행시킵니다.
 - 모든 step의 실행이 성공적으로 완료되어야 Job이 성공적으로 완료됩니다.
-- 맨 마지막에 실행한 Step의 BatchStatus가 Job의 최종 BatchStatus가 됩니다.
+- **맨 마지막에 실행한 Step의 BatchStatus가 Job의 최종 BatchStatus가 됩니다.**
 
-#### 기본 API [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#기본-api)
+
 
 ![그림3](https://backtony.github.io/assets/img/post/spring/batch/3/3-3.PNG)
 
-#### validator() [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#validator)
+#### 2.4.2.4 validator() 
 
 ![그림4](https://backtony.github.io/assets/img/post/spring/batch/3/3-4.PNG)
 
@@ -1103,16 +1094,16 @@ SimpleJobBuilder와 FlowJobBuilder는 각각의 Job을 생성하게 되고 JobRe
 
 
 
-#### 동작 과정 [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#동작-과정)
+**동작 과정** 
 
 ![그림5](https://backtony.github.io/assets/img/post/spring/batch/3/3-5.PNG)
 
 기본적으로 제공하는 DefaultJobParametersValidator는 생성자의 인자로 반드시 있어야 하는 key값을 담고 있는 requiredKeys 배열과 있으나 없으나 상관 없는 optionalKeys 배열을 받습니다.
 만약 optionalKeys와 requiredKeys 둘 안에 없는 파라미터가 들어오면 예외를 뱉어냅니다.
 
-#### 실습 [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#실습)
+#### 2.4.2.5 Sample
 
-```
+```java
 // 커스텀해서 만든 Validator
 public class CustomJobParametersValidator implements JobParametersValidator {
     @Override
@@ -1159,7 +1150,11 @@ public class HelloJobConfiguration {
 
 validator를 한 개이상 등록하게 되면 마지막에 등록한 것으로 처리된다.
 
-#### preventRestart() [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#preventrestart)
+
+
+
+
+**preventRestart()** 
 
 - 기본적으로 Job은 실패할 경우 재시작이 가능한데(기본값 true) 해당 옵션을 false로 주면 Job의 재시작을 지원하지 않습니다.
 - false인 상태에서 재시작하려고 시도하면 JobRestartException이 발생합니다.
@@ -1189,7 +1184,11 @@ public class HelloJobConfiguration {
 위 코드처럼 preventRestart()를 호출하면 옵션이 false인 상태로 들어갑니다.
 preventRestart()를 호출하지 않으면 기본값 true로 설정됩니다.
 
-#### incrementer() [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#incrementer)
+
+
+
+
+**incrementer()**
 
 JobParameters로 잡이 성공했다면 기본적으로 동일한 JobParameters로 동일한 Job을 실행시킬 수 없습니다.
 하지만 같은 JobParemeters로 계속 Job을 실행해야 할 때가 있습니다.
@@ -1234,7 +1233,7 @@ public class HelloJobConfiguration {
 
 구현체로 지원하는 RunIdIncrementer()의 경우 run.id 라는 키로 실행될 때마다 1부터 증가하여 파라미터에 값을 채워넣습니다.
 
-#### SimpleJob 흐름도 [Permalink](https://backtony.github.io/spring/2022-01-21-spring-batch-3/#simplejob-흐름도)
+#### 2.4.2.6 SimpleJob 흐름도
 
 ![그림6](https://backtony.github.io/assets/img/post/spring/batch/3/3-6.PNG)
 
@@ -1253,7 +1252,7 @@ Step이 모두 종료되면 JobListener에서 afterJob이 호출됩니다.
 
 
 
-#### JobParameter(왜 시스템파라미터가아닌지)  / Scope
+#### 2.4.2.7 JobParameter(왜 시스템파라미터가아닌지)  / Scope
 
 Spring Batch의 경우 외부 혹은 내부에서 파라미터를 받아 여러 Batch 컴포넌트에서 사용할 수 있게 지원하고 있습니다.
 이 파라미터를 **Job Parameter**라고 합니다.
@@ -1272,9 +1271,7 @@ Job Parameter를 사용하기 위해선 항상 Spring Batch 전용 Scope를 선�
 
 
 
-
-
-#### [@StepScope](https://github.com/StepScope) & [@JobScope](https://github.com/JobScope) 소개
+#### 2.4.2.8 JobScope & StepScope 
 
 Spring Batch는 `@StepScope`와 `@JobScope` 라는 아주 특별한 Bean Scope를 지원합니다.
 아시다시피, **Spring Bean의 기본 Scope는 singleton**인데요.
@@ -3036,44 +3033,50 @@ File,DB(JDBC,JPA),Redis,Kafka,MongoDB
 
 ## 2.7 Listener
 
-### Listener [Permalink](https://backtony.github.io/spring/2022-01-30-spring-batch-12/#listener)
-
-------
-
 배치 흐름 중에 Job, Step, Chunk 단계의 실행 전후에 발생하는 이벤트를 받아 용도에 맞게 활용할 수 있도록 제공하는 인터셉터 개념의 클래스입니다.
 각 단계별로 로그기록을 남기거나 소요된 시간을 계산하거나 실행상태 정보들을 참조 및 조회할 수 있습니다.
 
-종류 [Permalink](https://backtony.github.io/spring/2022-01-30-spring-batch-12/#종류)
+종류
 
 - Job
-  - JobExecutionListener : Job 실행 전후
+  - JobExecutionListener : Job 실행 전후 동작
+  - Job의 성공/실패 여부와 상관없이 호출된다.
+  - Job 성공/실패 여부는 JobExcution 을 통해 알 수 있다.
+
+```java
+public interface JobExecutionListener {
+    void beforeJob(JobExecution jobExecution);
+
+    void afterJob(JobExecution jobExecution);
+}
+```
+
 - Step
   - StepExecutionListener : Step 실행 전후
-  - ChunkListener : Chunk 실행 전후(Tasklet 실행 전후), 오류 시점
-  - ItemReaderListener : ItemReader 실행 전후, 오류 시점, 단, item이 null일 경우에는 호출 X
-  - ItemProcessorListener : ItemProcessor 실행 전후, 오류 시점, 단, item이 null일 경우에는 호출 X
-  - ItemWriterListener : ItemWriter 실행 전후, 오류 시점, 단, item이 null일 경우에는 호출 X
+  - Step의 성공/실패 여부와 상관없이 호출된다.
+  - Step 성공/실패 여부는 StepExcution 을 통해 알 수 있다.
+- ChunkListener : Chunk 실행 전후(Tasklet 실행 전후), 오류 시점
+- ItemReaderListener : ItemReader 실행 전후, 오류 시점, 단, item이 null일 경우에는 호출 X
+- ItemProcessorListener : ItemProcessor 실행 전후, 오류 시점, 단, item이 null일 경우에는 호출 X
+- ItemWriterListener : ItemWriter 실행 전후, 오류 시점, 단, item이 null일 경우에는 호출 X
 - SkipListener : item 처리가 Skip 될 경우 Skip된 item을 추적
 - RetryListener : Retry 시작, 종료, 에러 시점
 
-### 동작 위치 [Permalink](https://backtony.github.io/spring/2022-01-30-spring-batch-12/#동작-위치)
+
+
+### 2.7.1 동작 위치 
 
 ![그림1](https://backtony.github.io/assets/img/post/spring/batch/12/12-1.PNG)
 
 
 
-### JobExecutionListener / StepExecutionListener [Permalink](https://backtony.github.io/spring/2022-01-30-spring-batch-12/#jobexecutionlistener--stepexecutionlistener)
+### 2.7.2 Example
 
-------
-
-![그림2](https://backtony.github.io/assets/img/post/spring/batch/12/12-2.PNG)
-사용 방식은 매우 간단합니다.
 listener를 등록하는 방식은 인터페이스를 구현하거나 애노테이션을 사용하는 방식이 있습니다.
-오른쪽 그림에 Object 타입이 애노테이션을 통해 등록하는 방식이고 위 그림에서 StepExecutionListener에는 표시가 안되어 있지만 마찬가지로 애노테이션 방식을 지원합니다.
 
-### 예시 [Permalink](https://backtony.github.io/spring/2022-01-30-spring-batch-12/#예시)
+#### 2.7.2.1 인터페이스 구현 방식
 
-```
+```java
 @Configuration
 @RequiredArgsConstructor
 public class HelloJobConfiguration {
@@ -3159,9 +3162,10 @@ public class CustomStepExecutionListener implements StepExecutionListener {
 각각의 인터페이스를 구현해서 원하는 로직을 작성하면 됩니다.
 StepListener의 반환값으로 ExitStatus를 수정해서 Job의 ExitStatus에 반영되는 값을 수정할 수 있습니다.
 위 코드에서는 리스너를 new로 생성해서 등록했지만 빈으로 등록해서 DI받아서 등록해도 됩니다.
-아래 코드는 인터페이스를 구현하지 않고 애노테이션으로 리스너를 작성한 방식입니다.
 
-```
+#### 2.7.2.2 Annotation 방식
+
+```java
 public class CustomJobAnnotationExecutionListener {
 
     @BeforeJob
@@ -3180,8 +3184,6 @@ public class CustomJobAnnotationExecutionListener {
     }
 }
 ```
-
-
 
 실제로 리스너를 등록하는 방식은 똑같고 구현하는 방식만 애노테이션으로 변경된 것입니다.
 애노테이션 방식은 인터페이스를 구현하지 않고 애노테이션으로 언제 동작하는지 명시하기만 하면 됩니다.
@@ -5011,6 +5013,10 @@ class GlobalControllerExceptionHandler {
 
 ## *spring batch 5 적용
 
+https://alwayspr.tistory.com/49
+
+
+
 Spring Boot 3(=Spring Framework 6)부터 `Spring Batch 5` 버전을 사용하게 업데이트 되었다.
 Batch 5에 변경점이 많이 생겨 기존의 4버전과 다른 부분이 많이 생겼다.
 
@@ -5360,6 +5366,7 @@ https://gist.github.com/ihoneymon/a792351ad901f33c31470aa4e4f74acb
 https://docs.spring.io/spring-batch/docs/current/reference/html/index.html
 https://godekdls.github.io/Spring%20Batch/contents/
 https://backtony.github.io/spring
+https://alwayspr.tistory.com/49
 
 
 scdf https://velog.io/@mnetna/Spring-Data-Flow-using-Kubernetes-%EC%84%A4%EC%B9%98%EC%99%80-Remote-Partition-%EC%A0%81%EC%9A%A9

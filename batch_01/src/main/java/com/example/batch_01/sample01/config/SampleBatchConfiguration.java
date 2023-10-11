@@ -1,6 +1,7 @@
 package com.example.batch_01.sample01.config;
 
 import com.example.batch_01.sample01.etl.UserJdbcBatchItemWirter;
+import com.example.batch_01.sample01.listener.CustomJobAnnotationExecutionListener;
 import com.example.batch_01.sample01.listener.JobCompletionNotificationListener;
 import com.example.batch_01.sample01.model.User;
 import com.example.batch_01.sample01.etl.UserFlatFileItemReader;
@@ -26,22 +27,34 @@ import javax.sql.DataSource;
 
 @Configuration
 @RequiredArgsConstructor
+//extends DefaultBatchConfiguration
 public class SampleBatchConfiguration {
     private static final Logger logger = LoggerFactory.getLogger(SampleBatchConfiguration.class);
-
     private final JobCompletionNotificationListener jobCompletionNotificationListener;
+    private final CustomJobAnnotationExecutionListener customJobAnnotationExecutionListener;
     private final UserFlatFileItemReader userFlatFileItemReader;
     private final UserItemProcessor userItemProcessor;
     private final UserJdbcBatchItemWirter userJdbcBatchItemWirter;
     private final RecordCheckTasklet recordCheckTasklet;
-
     private final DataSource dataSource;
 
     @Bean
     public Job sampleJob(JobRepository jobRepository, Step sampleStep, Step taskletStep) {
+
         return new JobBuilder("sampleJob", jobRepository)
                 .incrementer(new RunIdIncrementer())
                 .listener(jobCompletionNotificationListener)
+                .preventRestart()
+                .start(taskletStep)
+                .next(sampleStep)
+                .build();
+    }
+
+    @Bean
+    public Job sampleJob2(JobRepository jobRepository, Step sampleStep, Step taskletStep) {
+        return new JobBuilder("sampleJob3", jobRepository)
+                .incrementer(new RunIdIncrementer())
+                .listener(customJobAnnotationExecutionListener)
                 .preventRestart()
                 .flow(taskletStep)
                 .next(sampleStep)
@@ -55,8 +68,8 @@ public class SampleBatchConfiguration {
                 .<User, User> chunk(50, transactionManager) // 10 Records at a time, max write
                 .reader(userFlatFileItemReader.read())
                 .processor(userItemProcessor)
-                //.writer(writer())
-                .writer(userJdbcBatchItemWirter)
+                .writer(writer())
+                //.writer(userJdbcBatchItemWirter)
                 //.faultTolerant()
                 //.skipLimit(10)
                 //.skip(ArrayIndexOutOfBoundsException.class)
