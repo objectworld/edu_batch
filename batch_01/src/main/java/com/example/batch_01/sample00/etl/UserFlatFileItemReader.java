@@ -1,6 +1,6 @@
-package com.example.batch_01.sample01.etl;
+package com.example.batch_01.sample00.etl;
 
-import com.example.batch_01.sample01.model.User;
+import com.example.batch_01.sample00.model.User;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.NonTransientResourceException;
 import org.springframework.batch.item.ParseException;

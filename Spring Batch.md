@@ -2,6 +2,10 @@
 
 STS 설치
 
+https://spring.io/tools
+
+
+
 git 설치
 
 mobaxterm 설치
@@ -986,9 +990,9 @@ https://docs.spring.io/spring-batch/docs/3.0.x/reference/html/metaDataSchema.htm
 
 
 
-## 2.4 Job 설정
+## 2.4 Job
 
-### 2.4.1 JobLauncherApplicationRunner
+ **JobLauncherApplicationRunner**
 
 - Spring Batch 작업을 시작하는 ApplicationRunner로서 BatchAutoConfiguration에서 생성됩니다.
 - 스프링 부트에서 제공하는 ApplicationRunner의 구현체로 애플리케이션이 정상적으로 구동되자 마자 실행됩니다.
@@ -1000,7 +1004,7 @@ application.properties 에서 Spring Batch의 환경 설정을 할 수 있습니
 
 ```properties
 spring.batch.job.enabled=true
-spring.batch.job.names=${job.name:NONE} 
+spring.batch.job.name=${job.name:NONE} 
 spring.batch.jdbc.initialize-schema = ALWAYS
 #spring.batch.jdbc.table-prefix: SYSTEM_
 ```
@@ -1029,7 +1033,7 @@ spring.batch.jdbc.initialize-schema = ALWAYS
 
 
 
-### 2.4.2 JobBuilder 
+### 2.4.1 JobBuilder 
 
 ------
 
@@ -1050,7 +1054,7 @@ spring.batch.jdbc.initialize-schema = ALWAYS
 
 
 
-#### 2.4.2.1 아키텍처
+### 2.4.2 아키텍처
 
 ![image-20231012003308596](C:\Users\CJS\AppData\Roaming\Typora\typora-user-images\image-20231012003308596.png)
 
@@ -1061,19 +1065,18 @@ spring.batch.jdbc.initialize-schema = ALWAYS
 
 
 
-#### 2.4.2.2 상속 구조![image-20231012012444838](C:\Users\CJS\AppData\Roaming\Typora\typora-user-images\image-20231012012444838.png)
+### 2.4.3 상속 구조![image-20231012012444838](C:\Users\CJS\AppData\Roaming\Typora\typora-user-images\image-20231012012444838.png)
 
 
 
 JobBuilder 클래스는 JobBuilderHelper를 상속받고 있습니다.
 JobBuilderHelper 클래스는 내부 static 클래스로 CommonJobProperties를 갖고 있으며 이를 필드값으로 갖고 있는데 Job을 생성하는 공통적인 내용을 갖고 있다
-JobFactory에서 JobBuilder를 생성할 때 생성자의 인자로 JobRepository를 넘기는데 이게 JobBuilder에 CommonJobProperties에 담기게 됩니다.
 JobBuilder가 생성하는 SimpleJobBuilder와 FlowJobBuilder는 JobBuilderHelper를 상속받고 있습니다.
 SimpleJobBuilder와 FlowJobBuilder는 각각의 Job을 생성하게 되고 JobRepository는 빌더 클래스를 통해 Job 객체에 전달되어 메타데이터를 기록하는데 사용됩니다.
 
 
 
-#### 2.4.2.3 SimpleJob
+### 2.4.4 SimpleJob
 
 - SimpleJob은 **Step을 실행시키는 Job 구현체로서 SimpleJobBuilder에 의해 생성** 됩니다.
 
@@ -1083,9 +1086,35 @@ SimpleJobBuilder와 FlowJobBuilder는 각각의 Job을 생성하게 되고 JobRe
 
 
 
-![그림3](https://backtony.github.io/assets/img/post/spring/batch/3/3-3.PNG)
+**기본API**
 
-#### 2.4.2.4 validator() 
+```java
+public Job batchJob(){
+	return JobBuilder("batchJob", jobRepository) // Job생성을 위한 Builder, Job 이름과 jobRepository 를 매개변수로 받음
+			.start(Step)						 // 처음 실행 할 Step 설정, SimpleJobBuilder 반환
+			.next(Step)							 // 다음에 실행 할 Step 설정, 횟수제한없음 모든 next 가 종료되어야 Job 종료
+			.incrementer(JobParameterIncrementer)// JobParameter의 값을 자동증가하는 설정
+			.preventRestart(true)				 // Job의 재시작 가능 여부 설정 (Default:true)
+			.validator(JobParameterValidator)    // Job 실행 전 JobParameter가 올바르게 구성되어있는지 Check
+			.listener(JobExcitionListener)		 // Job 실행 전 후 로 동작하는Lisenter
+			.build();							 // 위 설정에따른 Job 생성
+}
+```
+
+**SimpleJob 흐름도**
+
+![그림6](https://backtony.github.io/assets/img/post/spring/batch/3/3-6.PNG)
+
+- JobLauncher는 SimpleJob과 Jobparameters를 갖고 Job을 실행시킵니다.
+- 그 사이에 Job이 실행될 때 필요한 메타 데이터들을 생성합니다.(JobInstance, JobExecution, ExecutionContext)
+- Job이 실행되기 전에 JobListener에서 beforeJob이 호출됩니다.
+- 각각 Step이 실행되면서 StepExecution과 ExecutionContext가 생성됩니다.
+- Step이 모두 종료되면 JobListener에서 afterJob이 호출됩니다.
+- 마지막 Step 단계의 BatchStatus와 ExitStatus를 Job에 업데이트시키고 끝납니다.
+
+
+
+### 2.4.5 validator() 
 
 ![그림4](https://backtony.github.io/assets/img/post/spring/batch/3/3-4.PNG)
 
@@ -1101,7 +1130,7 @@ SimpleJobBuilder와 FlowJobBuilder는 각각의 Job을 생성하게 되고 JobRe
 기본적으로 제공하는 DefaultJobParametersValidator는 생성자의 인자로 반드시 있어야 하는 key값을 담고 있는 requiredKeys 배열과 있으나 없으나 상관 없는 optionalKeys 배열을 받습니다.
 만약 optionalKeys와 requiredKeys 둘 안에 없는 파라미터가 들어오면 예외를 뱉어냅니다.
 
-#### 2.4.2.5 Sample
+### 2.4.6 Sample_01
 
 ```java
 // 커스텀해서 만든 Validator
@@ -1114,43 +1143,23 @@ public class CustomJobParametersValidator implements JobParametersValidator {
     }
 }
 ------------------------------------------------------------------------------------------------------------
-@Slf4j
-@Configuration
-@RequiredArgsConstructor
-public class HelloJobConfiguration {
 
-    private final JobBuilderFactory jobBuilderFactory;
-    private final StepBuilderFactory stepBuilderFactory;
-
-    @Bean
-    public Job helloJob() {
-        return jobBuilderFactory.get("job1")
-                .start(step1())
-                // 커스텀 방식
-                //.validator(new CustomJobParametersValidator())
-
-                // defaultValidator
-                .validator(new DefaultJobParametersValidator(new String[]{"name","date"},new String[]{"count"}))
-                .build();
-    }
-
-    @Bean
-    public Step step1() {
-        return stepBuilderFactory.get("step1")
-                .tasklet((stepContribution, chunkContext) -> {
-                    System.out.println("step1 has executed");
-                    return RepeatStatus.FINISHED;
-                })
-                .build();
-    }
+@Bean
+public Job sampleJob(JobRepository jobRepository, Step sampleStep, Step taskletStep) {
+    return new JobBuilder("sampleJob", jobRepository)
+            .incrementer(new RunIdIncrementer())
+            .validator(new CustomJobParametersValidator())
+            .listener(jobCompletionNotificationListener)
+            .preventRestart()
+            .start(taskletStep)
+            .next(sampleStep)
+            .build();
 }
 ```
 
-
+**validator()** 
 
 validator를 한 개이상 등록하게 되면 마지막에 등록한 것으로 처리된다.
-
-
 
 
 
@@ -1159,45 +1168,20 @@ validator를 한 개이상 등록하게 되면 마지막에 등록한 것으로 
 - 기본적으로 Job은 실패할 경우 재시작이 가능한데(기본값 true) 해당 옵션을 false로 주면 Job의 재시작을 지원하지 않습니다.
 - false인 상태에서 재시작하려고 시도하면 JobRestartException이 발생합니다.
 
-```
-@Slf4j
-@Configuration
-@RequiredArgsConstructor
-public class HelloJobConfiguration {
-
-    private final JobBuilderFactory jobBuilderFactory;
-    private final StepBuilderFactory stepBuilderFactory;
-
-    @Bean
-    public Job helloJob() {
-        return jobBuilderFactory.get("job1")
-                .start(step1())
-                .preventRestart()
-                .build();
-    }
-    ....
-}
-```
-
-
-
 위 코드처럼 preventRestart()를 호출하면 옵션이 false인 상태로 들어갑니다.
 preventRestart()를 호출하지 않으면 기본값 true로 설정됩니다.
-
-
 
 
 
 **incrementer()**
 
 JobParameters로 잡이 성공했다면 기본적으로 동일한 JobParameters로 동일한 Job을 실행시킬 수 없습니다.
-하지만 같은 JobParemeters로 계속 Job을 실행해야 할 때가 있습니다.
-이때 JobIncrementer를 사용합니다.
-즉, **기존의 JobParameter 변경없이 Job을 여러 번 시작하고자 할 때 사용** 합니다.
+하지만 같은 JobParemeters로 계속 Job을 실행해야 할 때에는 JobIncrementer를 통해 실행가능합니다.
+ **JobIncrementer는 기존의 JobParameter 변경없이 Job을 여러 번 시작하고자 할 때 사용** 합니다.
 RunIdIncrementer 구현체를 지원하며 JobParametersIncrementer 인퍼테이스를 직접 구현할 수도 있습니다.
 **주의할 점은 Incrementer는 특별한 일을 하는 것이 아니라 실행되기 위해 주입된 파라미터에 추가로 파라미터를 더해주는 역할일 뿐이므로 validator을 사용할 경우 추가해주는 값을 명시해줘야 합니다.**
 
-```
+```java
 public class CustomJobParametersIncrementor implements JobParametersIncrementer {
 
     private static final SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd-hhmmss");
@@ -1209,50 +1193,27 @@ public class CustomJobParametersIncrementor implements JobParametersIncrementer 
     }
 }
 ----------------------------------------------------------------------------------
-@Slf4j
-@Configuration
-@RequiredArgsConstructor
-public class HelloJobConfiguration {
-
-    private final JobBuilderFactory jobBuilderFactory;
-    private final StepBuilderFactory stepBuilderFactory;
-
     @Bean
-    public Job helloJob() {
-        return jobBuilderFactory.get("job1")
-                .start(step1())
-                .incrementer(new CustomJobParametersIncrementor())
+    public Job sampleJob(JobRepository jobRepository, Step sampleStep, Step taskletStep) {
+        return new JobBuilder("sampleJob", jobRepository)
                 //.incrementer(new RunIdIncrementer())
+                .incrementer(new CustomJobParametersIncrementor())
+                //.validator(new CustomJobParametersValidator())
+                .listener(jobCompletionNotificationListener)
+                .preventRestart()
+                .start(taskletStep)
+                .next(sampleStep)
                 .build();
     }
-    ......
-}
 ```
 
 
 
 구현체로 지원하는 RunIdIncrementer()의 경우 run.id 라는 키로 실행될 때마다 1부터 증가하여 파라미터에 값을 채워넣습니다.
 
-#### 2.4.2.6 SimpleJob 흐름도
-
-![그림6](https://backtony.github.io/assets/img/post/spring/batch/3/3-6.PNG)
-
-JobLauncher는 SimpleJob과 Jobparameters를 갖고 Job을 실행시킵니다.
-그 사이에 Job이 실행될 때 필요한 메타 데이터들을 생성합니다.(JobInstance, JobExecution, ExecutionContext)
-Job이 실행되기 전에 JobListener에서 beforeJob이 호출됩니다.
-각각 Step이 실행되면서 StepExecution과 ExecutionContext가 생성됩니다.
-Step이 모두 종료되면 JobListener에서 afterJob이 호출됩니다.
-마지막 Step 단계의 BatchStatus와 ExitStatus를 Job에 업데이트시키고 끝납니다.
 
 
-
-
-
-
-
-
-
-#### 2.4.2.7 JobParameter(왜 시스템파라미터가아닌지)  / Scope
+### 2.4.7 JobParameter와 Scope
 
 Spring Batch의 경우 외부 혹은 내부에서 파라미터를 받아 여러 Batch 컴포넌트에서 사용할 수 있게 지원하고 있습니다.
 이 파라미터를 **Job Parameter**라고 합니다.
@@ -1269,19 +1230,39 @@ Job Parameter를 사용하기 위해선 항상 Spring Batch 전용 Scope를 선�
 
 각각의 Scope에서 사용하는 샘플 코드는 아래와 같습니다.
 
+**JobScope**
+
+![sample-jobscope](https://t1.daumcdn.net/cfile/tistory/9997BF4F5B7607502F)
+
+**StepScope**
+
+![sample-stepscope](https://t1.daumcdn.net/cfile/tistory/9990DC505B76075029)
+
+**@JobScope는 Step 선언문에서** 사용 가능하고, **@StepScope는 Tasklet이나 ItemReader, ItemWriter, ItemProcessor**에서 사용할 수 있습니다.
+
+spring batch 5.0 이전에 Job Parameter의 타입으로 사용할 수 있는 것은 `Double`, `Long`, `Date`, `String` 이 있습니다.
+아쉽지만 `LocalDate`와 `LocalDateTime`이 없어 `String` 으로 받아 타입변환을 해서 사용해야했었지만
+
+V5.0 이후에는 더 많은 타입이 추가되었습니다.
+
+예제 코드를 보시면 호출하는 쪽에서 `null` 를 할당하고 있는데요.
+이는 **Job Parameter의 할당이 어플리케이션 실행시에 하지 않기 때문에** 가능합니다.
+자 이게 무슨 이야기인지 좀 더 자세히 들어가보겠습니다.
 
 
-#### 2.4.2.8 JobScope & StepScope 
+
+### 2.4.8 JobScope & StepScope
 
 Spring Batch는 `@StepScope`와 `@JobScope` 라는 아주 특별한 Bean Scope를 지원합니다.
 아시다시피, **Spring Bean의 기본 Scope는 singleton**인데요.
 그러나 아래처럼 Spring Batch 컴포넌트 (Tasklet, ItemReader, ItemWriter, ItemProcessor 등)에 `@StepScope`를 사용하게 되면
 
-![stepscope1](D:\springbatch\Spring Batch 가이드(Markdown)\images\99A2F9475B7607502D)
+![stepscope1](https://t1.daumcdn.net/cfile/tistory/99A2F9475B7607502D)
 
 Spring Batch가 Spring 컨테이너를 통해 지정된 **Step의 실행시점에 해당 컴포넌트를 Spring Bean으로 생성**합니다.
 마찬가지로 `@JobScope`는 **Job 실행시점**에 Bean이 생성 됩니다.
 즉, **Bean의 생성 시점을 지정된 Scope가 실행되는 시점으로 지연**시킵니다.
+일종의 @Lazy Annotation 과 유사한 역할을 한다고 볼 수 있습니다.
 
 > 어떻게 보면 MVC의 request scope와 비슷할 수 있겠습니다.
 > request scope가 request가 왔을때 생성되고, response를 반환하면 삭제되는것처럼, JobScope, StepScope 역시 Job이 실행되고 끝날때, Step이 실행되고 끝날때 생성/삭제가 이루어진다고 보시면 됩니다.
@@ -1293,14 +1274,12 @@ Job Parameter가 StepContext 또는 JobExecutionContext 레벨에서 할당시�
 꼭 Application이 실행되는 시점이 아니더라도 Controller나 Service와 같은 **비지니스 로직 처리 단계에서 Job Parameter를 할당**시킬 수 있습니다.
 이 부분은 아래에서 좀 더 자세하게 예제와 함께 설명드리겠습니다.
 
-두번째로, 동일한 컴포넌트를 병렬 혹은 동시에 사용할때 유용합니다.
+두번째로, **동일한 컴포넌트를 병렬 혹은 동시에 사용할때 유용**합니다.
 Step 안에 Tasklet이 있고, 이 Tasklet은 멤버 변수와 이 멤버 변수를 변경하는 로직이 있다고 가정해봅시다.
 이 경우 `@StepScope` 없이 Step을 병렬로 실행시키게 되면 **서로 다른 Step에서 하나의 Tasklet을 두고 마구잡이로 상태를 변경**하려고 할것입니다.
 하지만 `@StepScope`가 있다면 **각각의 Step에서 별도의 Tasklet을 생성하고 관리하기 때문에 서로의 상태를 침범할 일이 없습니다**.
 
 
-
-#### Job Parameter 오해
 
 Job Parameters는 `@Value`를 통해서 가능합니다.
 그러다보니 여러가지 오해가 있을 수 있는데요.
@@ -1312,31 +1291,29 @@ Job과 Step의 코드에서 `@Bean`과 `@Value("#{jobParameters[파라미터명]
 
 > `@Autowired`를 쓰셔도 됩니다.
 
-![jobparameter1](D:\springbatch\Spring Batch 가이드(Markdown)\images\9994B94E5B76075129)
+![jobparameter1](https://t1.daumcdn.net/cfile/tistory/9994B94E5B76075129)
 
 그리고 `SimpleJobTasklet`은 아래와 같이 `@Component`와 `@StepScope`로 **Scope가 Step인 Bean**으로 생성합니다.
 이 상태에서 `@Value("#{jobParameters[파라미터명]}`를 Tasklet의 멤버변수로 할당합니다.
 
-![jobparameter2](D:\springbatch\Spring Batch 가이드(Markdown)\images\99C0984A5B76075126)
+![jobparameter2](https://t1.daumcdn.net/cfile/tistory/99C0984A5B76075126)
 
 이렇게 **메소드의 파라미터로 JobParameter를 할당받지 않고, 클래스의 멤버 변수로 JobParameter를 할당** 받도록 해도 실행해보시면!
 
-![jobparameter3](D:\springbatch\Spring Batch 가이드(Markdown)\images\994B8F365B76075126)
+![jobparameter3](https://t1.daumcdn.net/cfile/tistory/994B8F365B76075126)
 
 정상적으로 JobParameter를 받아 사용할 수 있습니다.
 이는 **SimpleJobTasklet Bean이 `@StepScope`로 생성**되었기 때문입니다.
 
 반면에, 이 SimpleJobTasklet Bean을 일반 singleton Bean으로 생성할 경우 아래와 같이 `'jobParameters' cannot be found` 에러가 발생합니다.
 
-![jobparameter4](D:\springbatch\Spring Batch 가이드(Markdown)\images\99B8343A5B76075127)
+![jobparameter4](https://t1.daumcdn.net/cfile/tistory/99B8343A5B76075127)
 
 즉, Bean을 메소드나 클래스 어느 것을 통해서 생성해도 무방하나 Bean의 Scope는 Step이나 Job이어야 한다는 것을 알 수 있습니다.
 
 JobParameters를 사용하기 위해선 꼭 **`@StepScope`, `@JobScope`로 Bean을 생성**해야한다는 것을 잊지마세요.
 
-
-
-#### JobParameter vs 시스템 변수
+### 2.4.9 JobParameter vs 시스템 변수
 
 앞의 이야기를 보면서 아마 이런 의문이 있을 수 있습니다.
 
@@ -1347,9 +1324,7 @@ JobParameters를 사용하기 위해선 꼭 **`@StepScope`, `@JobScope`로 Bean�
 자 그래서 왜 Job Parameter를 써야하는지 설명드리겠습니다.
 아래 2가지 코드를 한번 보겠습니다.
 
-
-
-#### JobParameter
+**JobParameter**
 
 ```java
 @Bean
@@ -1363,9 +1338,7 @@ public FlatFileItemReader<Partner> reader(
 }
 ```
 
-
-
-#### 시스템 변수
+**시스템 변수**
 
 > 여기에서 얘기하는 시스템 변수는 application.properties와 `-D` 옵션으로 실행하는 변수까지 포함합니다.
 
@@ -1410,18 +1383,57 @@ Job Parameter를 못쓴다는 것은 위에서도 언급한 **Late Binding을 �
 외부에서 넘겨주는 파라미터에 따라 Batch가 다르게 작동해야한다면, 이를 시스템 변수로 풀어내는 것은 너무나 어렵습니다.
 하지만 아래와 같이 Job Parameter를 이용한다면 아주 쉽게 해결할 수 있습니다.
 
+```java
+@Slf4j
+@RequiredArgsConstructor
+@RestController
+public class JobLauncherController {
+
+    private final JobLauncher jobLauncher;
+    private final Job job;
+
+    @GetMapping("/launchjob")
+    public String handle(@RequestParam("fileName") String fileName) throws Exception {
+
+        try {
+            JobParameters jobParameters = new JobParametersBuilder()
+                                    .addString("input.file.name", fileName)
+                                    .addLong("time", System.currentTimeMillis())
+                                    .toJobParameters();
+            jobLauncher.run(job, jobParameters);
+        } catch (Exception e) {
+            log.info(e.getMessage());
+        }
+
+        return "Done";
+    }
+}
+```
+
+예제를 보시면 Controller에서 Request Parameter로 받은 값을 Job Parameter로 생성합니다.
+
+```java
+JobParameters jobParameters = new JobParametersBuilder()
+                        .addString("input.file.name", fileName)
+                        .addLong("time", System.currentTimeMillis())
+                        .toJobParameters();
+```
+
+그리고 생성한 Job Parameter로 Job을 수행합니다.
+
+```java
+jobLauncher.run(job, jobParameters);
+```
+
+즉, 개발자가 원하는 어느 타이밍이든 Job Parameter를 생성하고 Job을 수행할 수 있음을 알 수 있습니다.
+Job Parameter를 각각의 Batch 컴포넌트들이 사용하면 되니 **변경이 심한 경우에도 쉽게 대응**할 수 있습니다.
 
 
-## 2.5 Step 설정
 
-### StepBuilderFactory와 StepBuilder [Permalink](https://backtony.github.io/spring/2022-01-22-spring-batch-4/#stepbuilderfactory와-stepbuilder)
+## 2.5 Step
 
-------
+### 2.5.1 StepBuilder
 
-- StepBuilderFactory
-  - StepBuilder를 생성하는 팩토리 클래스로서 get 메서드를 제공합니다.
-  - StepBuilderFactory.get(“stepName”)
-    - stepName으로 Step을 생성하도록 StepBuilder에게 넘깁니다.
 - StepBuilder
   - Step을 구성하는 설정 조건에 따라 다섯 개의 하위 빌더 클래스를 생성하고 Step 생성을 위임합니다.
   - TaskletStepBuilder
@@ -1435,39 +1447,40 @@ Job Parameter를 못쓴다는 것은 위에서도 언급한 **Late Binding을 �
   - FlowStepBuilder
     - FlowStep을 생성하여 Step 안에서 Flow를 실행합니다.
 
-### 아키텍처 [Permalink](https://backtony.github.io/spring/2022-01-22-spring-batch-4/#아키텍처)
+### 2.5.2 아키텍처 
 
-![그림1](https://backtony.github.io/assets/img/post/spring/batch/4/4-1.PNG)
+![image-20231013005039354](C:\Users\CJS\AppData\Roaming\Typora\typora-user-images\image-20231013005039354.png)
 
-JobBuilderFactory의 구조와 유사합니다.
-SteoBuilderFactory에서 get을 호출하면 내부적으로 StepBuilder를 호출합니다.
-StepBuilder는 API의 파라미터 타입과 구분에 따라 적절한 하위 빌더를 생성합니다.
 
-### 상속 구조 [Permalink](https://backtony.github.io/spring/2022-01-22-spring-batch-4/#상속-구조)
 
-![그림2](https://backtony.github.io/assets/img/post/spring/batch/4/4-2.PNG)
 
-상속 구조도 JobBuilderFactory와 유사합니다.
+### 2.5.3 상속 구조
+
+![image-20231013005219300](C:\Users\CJS\AppData\Roaming\Typora\typora-user-images\image-20231013005219300.png)
+
+
 StepBuilder는 StepBuilderHelper를 상속받고 있고 StepBuilderHelper는 공통적으로 Step 생성하는데 필요한 내용들을 담고 있습니다.
 각각의 하위 빌더들은 StepBuilderHelper를 상속받고 있고 각각에 맞는 Step들을 생성합니다.
 StepBuilder는 API 설정에 따라서 하위 빌더들을 생성하는 역할을 하고 있습니다.
 
 
 
-### TaskletStep [Permalink](https://backtony.github.io/spring/2022-01-22-spring-batch-4/#taskletstep)
+### 2.5.4 TaskletStep
 
 ------
 
-### 기본 개념 [Permalink](https://backtony.github.io/spring/2022-01-22-spring-batch-4/#기본-개념)
+#### 2.5.4.1 기본 개념 
 
 - **스프링 배치에서 제공하는 Step의 구현체로서 Tasklet을 실행시키는 도메인 객체**
 - TaskletStep은 Tasklet을 실행시키는데 있어 중간에 RepeatTemplate을 사용하여 Tasklet의 구문을 트랜잭션 경계 내에서 반복해서 실행시킵니다.
 - Task 기반과 Chunk 기반으로 나눠서 Tasklet을 실행합니다.
 
-### Task와 Chunk 기반 비교 [Permalink](https://backtony.github.io/spring/2022-01-22-spring-batch-4/#task와-chunk-기반-비교)
+
+
+#### 2.5.4.2 Task와 Chunk 기반 비교
 
 ![그림3](https://backtony.github.io/assets/img/post/spring/batch/4/4-3.PNG)
-스프링 배치에서 Step의 실행 단위는 크게 Step과 Chunk로 나눠집니다.
+스프링 배치에서 Step의 실행 단위는 크게 Task과 Chunk로 나눠집니다.
 
 - Chunk 기반
   - 하나의 큰 덩어리를 n개씩 나눠서 실행한다는 의미로 대량 처리를 하는 경우에 적합합니다.
@@ -1476,16 +1489,22 @@ StepBuilder는 API 설정에 따라서 하위 빌더들을 생성하는 역할�
   - 단일 작업 기반으로 처리되는 경우에 적합합니다.
   - 주로 Tasklet 구현체를 만들어서 사용합니다.
 
-### 기본 API 소개 [Permalink](https://backtony.github.io/spring/2022-01-22-spring-batch-4/#기본-api-소개)
+#### 2.4.5.3기본 API 소개
 
-![그림4](https://backtony.github.io/assets/img/post/spring/batch/4/4-4.PNG)
+```java
+public Step batchStep(){
+	return StepBuilder("batchStep", jobRepository) //Step 생성을 위한 Build ,이름과 jobRepository 를 매개변수로 받음
+			.tasklet(Tasklet,TransactionManager)   //TaskletStepBuilder 반환 Tasklet,transactionManager 를 매개변수로 받음
+			.startLimit(10)						   // Step 실행횟수 설정, 설정만큼 실행되고 초과시 오류 발생
+			.allowStartIfComplete(true)			   // Step의 성공 실패와 관계없이 항상 Step 실행하기위한 설정
+			.listener(StepExecutionListener)       // Step 실행 전후에 동작 정의
+			.build();							   // TaskletStep 생성
+}
+```
 
-### tasklet() [Permalink](https://backtony.github.io/spring/2022-01-22-spring-batch-4/#tasklet)
 
-- Tasklet 타입의 클래스를 세팅하는 API입니다.
-- TaskletStepBuilder가 반환되어 관련 API를 설정할 수 있습니다.
 
-#### Tasklet [Permalink](https://backtony.github.io/spring/2022-01-22-spring-batch-4/#tasklet-1)
+#### 2.5.4.4 Tasklet
 
 ![그림5](https://backtony.github.io/assets/img/post/spring/batch/4/4-5.PNG)
 
@@ -1500,9 +1519,9 @@ StepBuilder는 API 설정에 따라서 하위 빌더들을 생성하는 역할�
 
 
 
-#### 예시 [Permalink](https://backtony.github.io/spring/2022-01-22-spring-batch-4/#예시)
+#### 2.5.4.5 Sample_02
 
-```
+```java
 public class CustomTasklet implements Tasklet {
     @Override
     public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
@@ -1538,7 +1557,7 @@ public class HelloJobConfiguration {
 
 
 
-### startLimit() [Permalink](https://backtony.github.io/spring/2022-01-22-spring-batch-4/#startlimit)
+#### 2.5.4.6 startLimit()
 
 - Step의 실행 횟수를 조정할 때 사용됩니다.
 - Step 마다 설정할 수 있습니다.
@@ -1549,7 +1568,7 @@ public class HelloJobConfiguration {
 
 **예시**
 
-```
+```java
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
@@ -1578,7 +1597,7 @@ public class HelloJobConfiguration {
 
 
 
-### allowStartIfComplete() [Permalink](https://backtony.github.io/spring/2022-01-22-spring-batch-4/#allowstartifcomplete)
+#### 2.5.4.7 allowStartIfComplete()
 
 - 실패로 인한 재시작이 가능한 Job이 다시 실행될 때, 이전 실행에서 Step의 성공 여부와 관계 없이 항상 Step을 실행하기 위한 설정입니다.
 - 즉, 잡이 실행될때마다 무조건 해당 Step이 실행되게 하는 옵션입니다.
@@ -1589,7 +1608,7 @@ public class HelloJobConfiguration {
 
 **예시**
 
-```
+```java
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
@@ -1618,7 +1637,7 @@ public class HelloJobConfiguration {
 
 
 
-### TaskletStep 흐름도 [Permalink](https://backtony.github.io/spring/2022-01-22-spring-batch-4/#taskletstep-흐름도)
+#### 2.5.4.8 TaskletStep 흐름도
 
 ![그림6](https://backtony.github.io/assets/img/post/spring/batch/4/4-6.PNG)
 
@@ -1629,11 +1648,426 @@ StepExecution에 Step의 완료 상태를 업데이트합니다.
 
 
 
-### JobStep [Permalink](https://backtony.github.io/spring/2022-01-22-spring-batch-4/#jobstep)
+
+
+### 2.6.4 Chunk
+
+
+
+#### 기본 개념 [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#기본-개념)
+
+- **여러 개의 아이템을 묶은 하나의 덩어리** 를 의미합니다.
+- 한 번에 하나씩 아이템을 입력받아 Chunk 단위의 덩어리로 만든 후 Chunk 단위로 트랜잭션을 처리합니다.
+  - Chunk 단위로 Commit과 Rollback
+- 일반적으로 대용량 데이터를 한 번에 처리하는 것이 아닌 청크 단위로 쪼개어 반복해서 수행합니다.
+
+#### Chunk<I> , Chunk<O> [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#chunki--chunko)
+
+- Chunk<I>
+  - ItemReader로 읽은 하나의 아이템을 Chunk 크기만큼 반복해서 저장하는 타입
+- Chunk<O>
+  - ItemReader로부터 전달받은 Chunk<I>를 참조해서 ItemProcessor에서 적절하게 가공한 뒤 ItemWriter로 전달되는 타입
+  - 여기서 O는 Processor가 없다면 ItemReader로부터 전달받는 타입, Processor가 있다면 Processor로부터 전달받는 타입입니다.
+
+#### 아키텍처 [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#아키텍처)
+
+![그림1](https://backtony.github.io/assets/img/post/spring/batch/6/6-1.PNG)
+
+1. ItemReader가 Source를 한 건씩 읽고 한 건씩 Chunk크기 만큼 Chunk<I>에 저장합니다.
+2. Chunk 크기만큼 쌓였다면 Chunk<I>를 ItemProcessor에 전달합니다.
+3. ItemProcessor는 전달받은 Chunk를 적절하게 가공해서 Chunk<O>에 저장합니다.
+4. Chunk<O>를 ItemWriter에 전달합니다.
+5. itemWriter는 데이터를 쓰기작업합니다.
+
+**ItemReader와 ItemProcessor는 각각의 하나씩 아이템을 처리하지면 ItemWriter는 Chunk 크기만큼을 한 번에 일괄 처리합니다.**
+
+#### 내부 구조 [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#내부-구조)
+
+![그림2](https://backtony.github.io/assets/img/post/spring/batch/6/6-2.PNG)
+
+청크사이즈만큼 가질 수 있는 List와 예외에 대한 필드들이 있습니다.
+내부 클래스로 ChunkIterator를 갖고 있는데 이는 Chunk가 갖고있는 items들을 한 건씩 가져올 때 사용합니다.
+
+
+
+#### ChunkOrientedTasklet [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#chunkorientedtasklet)
 
 ------
 
-### 기본 개념 [Permalink](https://backtony.github.io/spring/2022-01-22-spring-batch-4/#기본-개념-1)
+#### 기본 개념 [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#기본-개념-1)
+
+- 스프링 배치에서 제공하는 **Tasklet 구현체로 Chunk 지향 프로세싱을 담당하는 도메인 객체** 입니다.
+- ItemReader, ItemWriter, ItemProcessor를 사용해 Chunk 기반 데이터 입출력을 담당합니다.
+- TaskletStep에 의해서 반복적으로 실행되며, ChunkOrientedTasklet이 실행될 때마다 **매번 새로운 트랜잭션이 생성** 되어 처리됩니다.
+- exception이 발생할 경우, 해당 Chunk는 롤백되며 이전에 커밋한 Chunk는 완료 상태가 유지됩니다.
+- 내부적으로 ItemReader를 핸들링하는 ChunkProvider와 ItemProcessor, ItemWriter를 핸들링하는 ChunkProcessor 타입의 구현체를 갖습니다.
+
+#### 실행 순서 [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#실행-순서)
+
+![그림3](https://backtony.github.io/assets/img/post/spring/batch/6/6-3.PNG)
+
+1. TaskletStep이 execute 메서드로 ChunkOrientedTasklet를 호출합니다.
+2. ChunkOrientedTasklet는 provide 메서드로 ChunkProvider를 호출합니다.
+3. ChunkProvider는 ItemReader에게 Item을 **한 건씩** read하도록 지시합니다.
+4. 이 과정이 Chunk size만큼 반복됩니다.
+5. ChunkOrientedTasklet는 ChunkProcessor에게 읽은 데이터를 가공하라고 명령합니다.
+6. ChunkProcessor는 ItemProcessor에게 명령하고 ItemProcessor는 전달된 아이템 개수만큼 반복하여 가공합니다.
+7. ChunkProcessor는 가공된 아이템을 ItemWriter에 전달합니다.
+8. ItemWriter는 저장하는 등 쓰기 처리를 합니다.
+9. 이것이 하나의 Chunk Size 사이클로 이후 다시 ChunkOrientedTasklet에 가서 읽을 Item이 없을 때까지 반복합니다.
+
+#### ChunkProvider [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#chunkprovider)
+
+- **ItemReader를 사용해서 소스로부터 아이템을 Chunk size만큼 읽어서 Chunk단위로 만들어 제공하는 도메인 객체**
+- Chunk<I>를 만들고 내부적으로 반복문을 사용해서 ItemReader.read()를 계속 호출하면서 item을 Chunk<I>에 쌓습니다.
+  - Chunk size만큼 item을 읽으면 반복문이 종료되고 ChunkProcessor로 넘깁니다.
+  - ItemReader가 읽은 item이 null일 경우 read 반복문이 종료되고 해당 Step의 반복문도 종료됩니다.
+- 외부로부터 ChunkProvider이 호출될 때마다 **새로운 Chunk** 를 생성합니다.
+- 기본 구현체로 SimpleChunkProvider, FaultTolerantChunkProvider이 있습니다.
+
+#### ChunkProcessor [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#chunkprocessor)
+
+- **ItemProcessor를 사용해서 Item을 변형, 가공, 필터링하고 ItemWriter를 사용해서 Chunk 데이터를 저장, 출력합니다.**
+
+- Chunk<O>를 만들고 앞에서 넘어온 Chunk<I>의 item을
+
+   
+
+  한 건씩
+
+   
+
+  itemProcessor를 통해 처리한 후 Chunk<O>에 저장합니다.
+
+  - 만약 ItemProcessor가 존재하지 않는다면 바로 Chunk<O>에 저장합니다.
+
+- ItemProcessor 처리가 완료되면 Chunk<O>에 있는 List<item>을 ItemWriter에게 전달합니다.
+
+- **ItemWriter 처리가 완료되면 Chunk 트랜잭션이 종료되고 Step 반복문에서는 다시 ChunkOrientedTasklet가 새롭게 실행됩니다.**
+
+- ItemWriter는 Chunk size만큼 데이터를 커밋하기 때문에 Chunk size는 곧 Commit Interval(커밋 간격)이 됩니다.
+
+- 기본 구현체로 SimpleChunkProcessor와 FaultTolerantChunkProcessor가 있습니다.
+
+#### 기본 API [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#기본-api)
+
+![그림4](https://backtony.github.io/assets/img/post/spring/batch/6/6-4.PNG)
+위에 Chunk가 두 개 표기되어 있는데 실제로는 한 개만 사용 가능합니다.
+두가지 방법이 있다 정도로 알아두면 될 것 같습니다.
+
+#### ItemReader [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#itemreader)
+
+![그림5](https://backtony.github.io/assets/img/post/spring/batch/6/6-5.PNG)
+
+- 다양한 입력으로부터 데이터를 읽어서 제공하는 인터페이스
+
+   
+
+  입니다.
+
+  - 플랫 파일 - csv, txt
+  - XML, Jsono
+  - Database
+  - Message Queuing 서비스
+  - Custom reader
+
+- 다수의 구현체들이 ItemReader와 ItemStream 인터페이스를 동시에 구현하고 있습니다.
+
+  - ItemStream은 파일 스트림 연결 종료, DB 커넥션 연결 종료 등의 장치 초기화 등의 작업에 사용됩니다.
+  - ExecutionContext에 read와 관련된 여러 가지 상태 정보를 저장해두고 재시작 시 참조됩니다.
+
+- ChunkOrientedTasklet 실행 시 필수적 요소로 설정해야 합니다.
+
+- T read()
+
+  - 입력 데이터를 읽고 다음 데이터로 이동합니다.
+  - 아이템 하나를 리턴하며 더 이상 아이템이 없는 경우 null 리턴합니다.
+  - 아이템 하나는 파일의 한 줄, DB의 한 row, XML 파일에서 하나의 엘리먼트를 의미합니다.
+  - 더 이상 처리해야 할 item이 없어도 예외가 발생하지 않고 itemProcessor와 같은 다음 단계로 넘어갑니다.
+
+#### ItemWriter [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#itemwriter)
+
+![그림6](https://backtony.github.io/assets/img/post/spring/batch/6/6-6.PNG)
+
+- Chunk 단위로 데이터를 받아 일괄 출력 작업을 위한 인터페이스
+
+   
+
+  입니다.
+
+  - 플랫 파일 - csv, txt
+  - XML, Jsono
+  - Database
+  - Message Queuing 서비스
+  - Mail Service
+  - Custom reader
+
+- 다수의 구현체들이 itemReader와 같은 맥락으로 itemWriter와 ItemStream을 동시에 구현하고 있습니다.
+
+- 하나의 아이템이 아닌 아이템 리스트를 전달받아 수행합니다.
+
+- ChunkOrientedTasklet 실행 시 필수적 요소로 설정해야 합니다.
+
+- void write()
+
+  - 출력 데이터를 아이템 리스트로 받아서 처리합니다.
+  - 출력이 완료되고 트랜잭션이 종료되면 새로운 Chunk 단위 프로세스로 이동합니다.
+
+#### ItemProcessor [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#itemprocessor)
+
+![그림7](https://backtony.github.io/assets/img/post/spring/batch/6/6-7.PNG)
+
+- **데이터를 출력하기 전에 데이터를 가공 및 필터링 역할을 하는 인터페이스** 입니다.
+- ItemReader 및 ItemWriter와 분리되어 비즈니스 로직을 구현할 수 있습니다.
+- ItemReader로부터 받은 아이템을 특정 타입으로 변환해서 ItemWriter에 넘겨 줄 수 있습니다.
+- Itemreader로부터 받은 아이템들 중 필터과정을 거쳐서 원하는 아이템들만 ItemWriter로 넘겨줄 수 있습니다.
+- ChunkOrientedTasklet 실행 시 선택적 요소기 때문에 필수 요소는 아닙니다.
+- O process()
+  - I 제네릭은 ItemReader에서 받을 데이터 타입
+  - O 제네릭은 ItemWriter에게 보낼 데이터 타입
+  - **아이템을 하나씩 가공 처리하며 null을 리턴할 경우 해당 아이템은 Chunk<O>에 저장되지 않습니다.**
+- ItemStream을 구현하지 않고 거의 대부분 Customizing해서 사용하기 때문에 기본적으로 제공되는 구현체가 적습니다.
+
+#### ItemStream [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#itemstream)
+
+![그림8](https://backtony.github.io/assets/img/post/spring/batch/6/6-8.PNG)
+
+- ItemReader와 ItemWriter 처리 과정 중 상태를 저장하고 오류가 발생하여 재시작 시 해당 상태를 참조하여 실패한 곳부터 재시작하도록 지원합니다.
+- 리소스를 열고(open) 닫아야(close) 하며 입출력 장치 초기화 등의 작업을 해야하는 경우 사용합니다.
+  - 대부분의 구현체는 다 만들어져 있기 때문에 구현체를 사용한다면 직접 구현할 일은 없습니다.
+- open과 update 메서드에서 ExecutionContext를 인수로 받는데 이는 상태 정보를 ExecutionContext에 업데이트 해두고 재시작 시 open에서 해당 정보를 가져와서 사용하기 때문입니다.
+  - 예를 들어, 총 10개의 데이터를 Chunk 5단위로 진행한다면 총 2번의 update가 발생합니다. 만약 9번째 데이터를 읽는 과정에서 문제가 발생하면 첫번째 청크 커밋은 완료가 된 상태로 재시작 시에는 open에서 ExecutionContext에서 정보를 가져와 6번째 데이터부터 다시 시작할 수 있습니다.
+- Stream이 구현된 ItemReader와 ItemWriter를 직접 만들려면 ItemStreamReader, ItemStreamWrtier 인터페이스를 구현하면 됩니다.
+
+
+
+#### 최종 아키텍처 [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#최종-아키텍처)
+
+------
+
+![그림9](https://backtony.github.io/assets/img/post/spring/batch/6/6-9.PNG)
+
+1. Job을 실행하면 TaskletStep이 실행됩니다.
+2. Tasklet은 내부에 RepeatTemplate라는 반복기를 가지고 있어 ChunkOrientedTasklet을 반복합니다.
+3. ChunkOrientedTasklet이 실행될 때 스프링 배치는 Transaction 경계를 생성합니다.
+4. Chunk 단위로 작업을 시작합니다.
+5. SimpleChunkProvider도 내부적으로 RepeatTmplate 반복기를 갖고 있어 ItemReader을 Chunk size만큼 반복시켜서 데이터를 읽습니다.
+6. Chunk Size만큼 읽고 읽은 아이템이 담긴 Chunk<I>를 SimpleChunkProcessor에 넘깁니다.
+7. SimpleChunkProcessor는 전달받은 Chunk 데이터를 한 건씩 읽어서 ItemProcessor로 데이터를 가공하여 Chunk<O>에 저장합니다.
+8. ItemWriter에게 Chunk가 갖고 있는 List값을 전달하고 ItemWriter는 출력 처리를 합니다.(트랜잭션 커밋)
+9. 이 과정이 청크 단위로 반복되고 ItemReader에서 null 값을 읽을 때 반복 작업이 끝나게 됩니다.
+
+만약 중간에 예외가 발생한다면 트랜잭션 롤백이 발생하고 작업이 중단됩니다.
+만약 ItemReader에서 null값을 읽어오게 된다면 RepeatStatus.FINISHED를 통해 현재 작업을 마지막으로 다음부터는 반복 작업이 일어나지 않게 됩니다.
+**Chunk 단위마다 새로운 트랜잭션** 이 생성되고 커밋되는 과정이 존재하는 것을 알아둡시다.
+
+
+
+
+
+Spring Batch에서의 Chunk란 데이터 덩어리로 작업 할 때 **각 커밋 사이에 처리되는 row 수**를 얘기합니다.
+즉, Chunk 지향 처리란 **한 번에 하나씩 데이터를 읽어 Chunk라는 덩어리를 만든 뒤, Chunk 단위로 트랜잭션**을 다루는 것을 의미합니다.
+
+여기서 트랜잭션이라는게 중요한데요.
+Chunk 단위로 트랜잭션을 수행하기 때문에 **실패할 경우엔 해당 Chunk 만큼만 롤백**이 되고, 이전에 커밋된 트랜잭션 범위까지는 반영이 된다는 것입니다.
+
+Chunk 지향 처리가 결국 Chunk 단위로 데이터를 처리한다는 의미이기 때문에 그림으로 표현하면 아래와 같습니다.
+
+![chunk-process](https://t1.daumcdn.net/cfile/tistory/999A513E5B814C4A12)
+
+> [공식 문서의 그림](https://docs.spring.io/spring-batch/4.0.x/reference/html/index-single.html#chunkOrientedProcessing)은 **개별 item이 처리되는 것만** 다루고 있습니다.
+> 위 그림은 Chunk 단위까지 다루고 있어 조금 다르니 주의해주세요.
+
+- Reader에서 데이터를 하나 읽어옵니다
+- 읽어온 데이터를 Processor에서 가공합니다
+- 가공된 데이터들을 별도의 공간에 모은 뒤, Chunk 단위만큼 쌓이게 되면 Writer에 전달하고 Writer는 일괄 저장합니다.
+
+**Reader와 Processor에서는 1건씩 다뤄지고, Writer에선 Chunk 단위로 처리**된다는 것만 기억하시면 됩니다.
+
+Chunk 지향 처리를 Java 코드로 표현하면 아래처럼 될 것 같습니다.
+
+```java
+for(int i=0; i<totalSize; i+=chunkSize){ // chunkSize 단위로 묶어서 처리
+    List items = new Arraylist();
+    for(int j = 0; j < chunkSize; j++){
+        Object item = itemReader.read()
+        Object processedItem = itemProcessor.process(item);
+        items.add(processedItem);
+    }
+    itemWriter.write(items);
+}
+```
+
+**chunkSize별로 묶어서 처리**된다는 의미가 이해가 되셨나요?
+자 그럼 이제 Chunk 지향 처리가 어떻게 되고 있는지 실제 Spring Batch 내부 코드를 보면서 알아보겠습니다.
+
+#### 6-2. ChunkOrientedTasklet 엿보기
+
+Chunk 지향 처리의 전체 로직을 다루는 것은 `ChunkOrientedTasklet` 클래스입니다.
+클래스 이름만 봐도 어떤 일을 하는지 단번에 알 수 있을것 같습니다.
+
+![tasklet1](https://t1.daumcdn.net/cfile/tistory/9903723A5B814C4D01)
+
+여기서 자세히 보셔야할 코드는 `execute()` 입니다.
+Chunk 단위로 작업하기 위한 전체 코드가 이곳에 있다고 보시면 되는데요.
+내부 코드는 아래와 같습니다.
+
+![tasklet2](https://t1.daumcdn.net/cfile/tistory/99C279485B814C4D26)
+
+- `chunkProvider.provide()`로 Reader에서 Chunk size만큼 데이터를 가져옵니다.
+- `chunkProcessor.process()` 에서 Reader로 받은 데이터를 가공(Processor)하고 저장(Writer)합니다.
+
+데이터를 가져오는 `chunkProvider.provide()`를 가보시면 어떻게 데이터를 가져오는지 알 수 있습니다.
+
+![tasklet3](https://t1.daumcdn.net/cfile/tistory/9969C3335B814C4D2A)
+
+`inputs`이 ChunkSize만큼 쌓일때까지 `read()`를 호출합니다.
+이 `read()` 는 내부를 보시면 실제로는 `ItemReader.read`를 호출합니다.
+
+![tasklet4](https://t1.daumcdn.net/cfile/tistory/997C99365B814C4C24)
+
+![tasklet5](https://t1.daumcdn.net/cfile/tistory/992738395B814C4D34)
+
+즉, `ItemReader.read`에서 1건씩 데이터를 조회해 Chunk size만큼 데이터를 쌓는 것이 `provide()`가 하는 일입니다.
+
+자 그럼 이렇게 쌓아준 데이터를 어떻게 가공하고 저장하는지 한번 확인해보겠습니다.
+
+#### 6-3. SimpleChunkProcessor 엿보기
+
+Processor와 Writer 로직을 담고 있는 것은 `ChunkProcessor` 가 담당하고 있습니다.
+
+![process0](https://t1.daumcdn.net/cfile/tistory/999AC5365B814C4A37)
+
+인터페이스이기 때문에 실제 구현체가 있어야 하는데요.
+기본적으로 사용되는 것이 `SimpleChunkProcessor` 입니다.
+
+![process1](https://t1.daumcdn.net/cfile/tistory/99643D475B814C4D22)
+
+위 클래스를 보시면 Spring Batch에서 Chunk 단위 처리를 어떻게 하는지 아주 상세하게 확인할 수 있습니다.
+처리를 담당하는 핵심 로직은 `process()` 입니다.
+이 `process()`의 코드는 아래와 같습니다.
+
+![process2](https://t1.daumcdn.net/cfile/tistory/99DE13375B814C4C36)
+
+- ```
+  Chunk<I> inputs
+  ```
+
+  를 파라미터로 받습니다.
+
+  - 이 데이터는 앞서 `chunkProvider.provide()` 에서 받은 ChunkSize만큼 쌓인 item입니다.
+
+- `transform()` 에서는 전달 받은 `inputs`을 `doProcess()`로 전달하고 변환값을 받습니다.
+
+- ```
+  transform()
+  ```
+
+  을 통해 가공된 대량의 데이터는
+
+   
+
+  ```
+  write()
+  ```
+
+  를 통해 일괄 저장됩니다.
+
+  - `write()`는 저장이 될수도 있고, 외부 API로 전송할 수 도 있습니다.
+  - 이는 개발자가 ItemWriter를 어떻게 구현했는지에 따라 달라집니다.
+
+여기서 `transform()`은 반복문을 통해 `doProcess()`를 호출하는데요.
+해당 메소드는 ItemProcessor의 `process()`를 사용합니다.
+
+![process3](https://t1.daumcdn.net/cfile/tistory/993725375B814C4D2F)
+
+`doProcess()` 를 처리하는데 만약 ItemProcessor가 없다면 item을 그대로 반환하고 있다면 ItemProcessor의 `process()`로 가공하여 반환합니다.
+
+![process4](https://t1.daumcdn.net/cfile/tistory/9942063F5B814C4D05)
+
+그리고 이렇게 가공된 데이터들은 위에서도 나와있듯이 SimpleChunkProcessor의 `doWrite()` 를 호출하여 일괄 처리 합니다.
+
+![process4](https://t1.daumcdn.net/cfile/tistory/99C3D0375B814C4C14)
+
+자 Chunk 지향 처리에 대해 실제 코드를 보면서 어떻게 처리되는지 알아보았습니다.
+아래에서는 ChunkSize에 대한 오해를 한번 풀어보겠습니다.
+
+#### 6-4. Page Size vs Chunk Size
+
+기존에 Spring Batch를 사용해보신 분들은 아마 PagingItemReader를 많이들 사용해보셨을 것입니다.
+PagingItemReader를 사용하신 분들 중 간혹 Page Size와 Chunk Size를 같은 의미로 오해하시는 분들이 계시는데요.
+**Page Size와 Chunk Size는 서로 의미하는 바가 다릅니다**.
+
+**Chunk Size는 한번에 처리될 트랜잭션 단위**를 얘기하며, **Page Size는 한번에 조회할 Item의 양**을 얘기합니다.
+
+자 그럼 이제 2개가 어떻게 다른지 실제 Spring Batch의 ItemReader 코드를 직접 들여다보겠습니다.
+
+PagingItemReader의 부모 클래스인 `AbstractItemCountingItemStreamItemReader`의 `read()` 메소드를 먼저 보겠습니다.
+
+![read1](https://t1.daumcdn.net/cfile/tistory/99CEA6335B814C4C23)
+
+보시는것처럼 읽어올 데이터가 있다면 `doRead()`를 호출합니다.
+
+`doRead()`의 코드는 아래와 같습니다.
+
+![read2](https://t1.daumcdn.net/cfile/tistory/99A4433F5B814C4D0E)
+
+`doRead()`에서는 현재 읽어올 데이터가 없거나, Page Size를 초과한 경우 `doReadPage()`를 호출합니다.
+읽어올 데이터가 없는 경우는 read가 처음 시작할 때를 얘기합니다.
+Page Size를 초과하는 경우는 예를 들면 Page Size가 10인데, 이번에 읽어야할 데이터가 11번째 데이터인 경우입니다.
+이럴 경우 Page Size를 초과했기 때문에 `doReadPage()` 를 호출한다고 보시면 됩니다.
+
+즉, **Page 단위로 끊어서 조회**하는 것입니다.
+
+> 게시판 만들기에서 페이징 조회를 떠올려보시면 쉽게 이해가 되실것 같습니다.
+
+`doReadPage()`부터는 하위 구현 클래스에서 각자만의 방식으로 페이징 쿼리를 생성합니다.
+여기서는 보편적으로 많이 사용하시는 **JpaPagingItemReader** 코드를 살펴보겠습니다.
+
+JpaPagingItemReader의 `doReadPage()`의 코드는 아래와 같습니다.
+
+![read3](https://t1.daumcdn.net/cfile/tistory/99999E405B814C4D24)
+
+Reader에서 지정한 Page Size만큼 `offset`, `limit` 값을 지정하여 페이징 쿼리를 생성 (`createQuery()`)하고, 사용 (`query.getResultList()`) 합니다.
+쿼리 실행 결과는 `results`에 저장합니다.
+이렇게 저장된 `results`에서 `read()` 가 **호출될때마다 하나씩 꺼내서 전달**합니다.
+
+즉, Page Size는 **페이징 쿼리에서 Page의 Size를 지정하기 위한 값**입니다.
+
+만약 2개 값이 다르면 어떻게 될까요?
+PageSize가 10이고, ChunkSize가 50이라면 **ItemReader에서 Page 조회가 5번 일어나면 1번 의 트랜잭션이 발생하여 Chunk가 처리**됩니다.
+
+한번의 트랜잭션 처리를 위해 5번의 쿼리 조회가 발생하기 때문에 성능상 이슈가 발생할 수 있습니다. 그래서 Spring Batch의 PagingItemReader에는 클래스 상단에 다음과 같은 주석을 남겨두었습니다.
+
+> Setting a fairly large page size and using a commit interval that matches the page size should provide better performance.
+> (상당히 큰 페이지 크기를 설정하고 페이지 크기와 일치하는 커미트 간격을 사용하면 성능이 향상됩니다.)
+
+성능상 이슈 외에도 2개 값을 다르게 할 경우 JPA를 사용하신다면 영속성 컨텍스트가 깨지는 문제도 발생합니다.
+(이전에 관련해서 [문제를 정리](http://jojoldu.tistory.com/146)했으니 참고해보세요)
+
+2개 값이 의미하는 바가 다르지만 위에서 언급한 여러 이슈로 **2개 값을 일치시키는 것이 보편적으로 좋은 방법**이니 꼭 2개 값을 일치시키시길 추천드립니다.
+
+
+
+
+
+#### Reader & Processor & Writer 설정
+
+TODO
+
+File,DB(JDBC,JPA),Redis,Kafka,MongoDB
+
+
+
+
+
+
+
+### 2.5.5 JobStep 
+
+------
+
+#### 2.5.5.1 기본 개념 
 
 - 외부의 Job을 포함하고 있는 하나의 Step
 - 외부의 Job이 실패하면 해당 Step이 실패하므로 해당 Step을 품고있는 기본 Job도 실패합니다.
@@ -1641,35 +2075,32 @@ StepExecution에 Step의 완료 상태를 업데이트합니다.
 - 커다란 시스템을 작은 모듈로 쪼개고 job의 흐름을 관리하고자 할 때 사용합니다.
 - Step의 동작이었던 Tasklet 대신 Job을 넣었다고 생각하면 이해가 쉽습니다.
 
-### API 소개 [Permalink](https://backtony.github.io/spring/2022-01-22-spring-batch-4/#api-소개)
+
+
+#### 2.5.5.2 API 소개
 
 ![그림7](https://backtony.github.io/assets/img/post/spring/batch/4/4-7.PNG)
 parameterExtractor이 이해가 잘 안될텐데 예시에서 살펴보겠습니다.
 
-### 예시 [Permalink](https://backtony.github.io/spring/2022-01-22-spring-batch-4/#예시-1)
+#### 2.5.5.3 Sample_03
 
-```
-@Slf4j
+```java
 @Configuration
 @RequiredArgsConstructor
 public class HelloJobConfiguration {
 
-    private final JobBuilderFactory jobBuilderFactory;
-    private final StepBuilderFactory stepBuilderFactory;
-
     @Bean
-    public Job helloJob() {
-        return jobBuilderFactory.get("parentJob")
-                .start(jobStep(null)) // null로 넣으면 DI로 알아서 주입
+    public Job helloJob(JobRepository jobRepository, Step jobStep, Step scopeStep02) {
+        return new JobBuilder("sample03", jobRepository)
+                .start(jobStep) // null로 넣으면 DI로 알아서 주입
                 .incrementer(new RunIdIncrementer())
                 .build();
     }
 
-
     @Bean
-    public Step jobStep(JobLauncher jobLauncher) {
-        return stepBuilderFactory.get("jobStep")
-                .job(childJob())
+    public Step jobStep(JobLauncher jobLauncher,JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+        return new StepBuilder("jobStep", jobRepository)
+                .job(childJob(jobRepository,step1(jobRepository,transactionManager)))
                 .launcher(jobLauncher)
                 .parametersExtractor(jobParametersExtractor())
                 // 리스터를 통해서 Step이 시작하기 전에 Step의 ExecutionContext에 name과 backtony 키밸류값 등록
@@ -1696,21 +2127,20 @@ public class HelloJobConfiguration {
     }
 
     @Bean
-    public Job childJob() {
-        return jobBuilderFactory.get("childJob")
-                .start(step1())
+    public Job childJob(JobRepository jobRepository, Step step1) {
+        return new JobBuilder("childJob", jobRepository)
+                .start(step1)
                 .build();
-
     }
 
     @Bean
-    public Step step1() {
-        return stepBuilderFactory.get("step1")
+    public Step step1(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+        return new StepBuilder("step1",jobRepository)
                 .tasklet((stepContribution, chunkContext) -> {
-                    JobParameters jobParameters = contribution.getStepExecution().getJobExecution().getJobParameters();
+                    JobParameters jobParameters = stepContribution.getStepExecution().getJobExecution().getJobParameters();
                     System.out.println(jobParameters.getString("name"));
                     return RepeatStatus.FINISHED;
-                })
+                },transactionManager)
                 .build();
     }
 }
@@ -1730,13 +2160,13 @@ JobStep의 경우 Step 안에서 Job이 실행되기 때문에 Job이 실행되�
 
 
 
-## 2.6 Flow 
+## 2.6 Flow
 
-### FlowJob [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#flowjob)
+### 2.6.1 FlowJob 
 
 ------
 
-기본 개념 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#기본-개념)
+#### 2.6.1.1 기본 개념
 
 - Step을 특정한 상태에 따라 흐름을 전환하도록 구성할 수 있으며 FlowJobBuilder에 의해 생성됩니다.
   - Step이 실패하더라도 Job은 실패로 끝나지 않도록 해야 하는 경우
@@ -1745,11 +2175,11 @@ JobStep의 경우 Step 안에서 Job이 실행되기 때문에 Job이 실행되�
 - Flow와 Job의 흐름을 구성하는데만 관여하고 실제 로직은 Step에서 이뤄집니다.
 - 내부적으로 SimpleFlow 객체를 포함하고 있으며 job 실행 시 호출됩니다.
 
-배치 상태 유형 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#배치-상태-유형)
+배치 상태 유형 
 
 FlowJob은 조건에 따라 분기되어 실행되는데 그에 대한 조건으로 상태를 이용합니다.
 
-#### Batch Status [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#batch-status)
+#### 2.6.1.2 Batch Status
 
 Batch Status는 JobExecution과 StepExecution의 속성으로 Job과 Step의 실행 상태를 나타냅니다.
 COMPLETED, STARTING, STARTED, STOPPING, STOPPED, FAILED, ABANDONED, UNKNOWN 총 8 종류의 **ENUM값** 이 있습니다.
@@ -1762,7 +2192,7 @@ ABANDONED와 FAILED와의 차이점은 FAILED는 실패 후 재실행 시 재시
   - Flow내 Step의 **ExitStatus** 값을 FlowExecutionStatus에 반영합니다.
   - 마지막 Flow의 FlowExecutionStatus 값을 Job의 최종 BatchStatus 값으로 반영합니다.
 
-#### ExitStatus [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#exitstatus)
+#### 2.6.1.3ExitStatus
 
 JobExecution과 StepExecution의 속성으로 Job과 Step의 실행 후 종료되는 상태를 나타냅니다.
 **기본적으로 ExitStatus는 BatchStatus와 동일한 값으로 설정됩니다.**
@@ -1774,20 +2204,20 @@ JobExecution과 StepExecution의 속성으로 Job과 Step의 실행 후 종료�
   - Flow내 Step의 **ExitStatus** 값을 FlowExecutionStatus 값으로 저장합니다.
   - 마지막 Flow의 FlowExecutionStatus 값을 Job의 최종 ExitStatus값으로 반영합니다.
 
-#### FlowExecutionStatus [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#flowexecutionstatus)
+#### 2.6.1.4 FlowExecutionStatus
 
 - FlowExecution의 속성으로 Flow의 실행 후 최종 결과 상태를 나타냅니다.
 - Flow 내 Step이 실행되고 ExitStatus값을 FlowExecutionStatus값으로 저장하게 됩니다.
 - FlowJob의 BatchStatus에 관여합니다.
 - COMPLETED, STOPPED, FAILED, UNKNOWN 의 상태가 있습니다.
 
-### API 소개 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#api-소개)
+#### 2.6.1.5 API 소개 
 
 ![그림1](https://backtony.github.io/assets/img/post/spring/batch/5/5-1.PNG)
 FlowJob은 API설명만으로 이해하기는 어렵습니다.
 아래서 하나씩 살펴보겠습니다.
 
-#### start(), next() [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#start-next)
+#### 2.6.1.6 start(), next()
 
 ![그림2](https://backtony.github.io/assets/img/post/spring/batch/5/5-2.PNG)
 start에는 Flow와 Step이 모두 올 수 있습니다.
@@ -1795,7 +2225,7 @@ Flow가 오게 되면 jobFlowBuilder가 반환되고, Step이 오면 SimpleJobBu
 하지만 simpleJobBuilder도 on을 지원하기 때문에 start에 step을 인자로 넣고 뒤에서 on을 사용하면 jobFlowBuilder가 반환됩니다.
 next는 Step, Flow, JobExecutionDecider 타입을 받을 수 있습니다.
 
-#### Transition [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#transition)
+#### 2.6.1.7 Transition
 
 - Flow 내 Step의 조건부 전환을 정의합니다.
 - Job의 API설정에서 on(String Pattern) 메서드를 호출하면 TransitionBuilder가 반환되어 Transition Flow를 구성할 수 있습니다.
@@ -1832,9 +2262,9 @@ next는 Step, Flow, JobExecutionDecider 타입을 받을 수 있습니다.
     - 특정 step에서 작업을 중단하도록 설정하면 중단 이전의 Step만 COMPLETED로 저장되고 이후의 Step은 실행되지 않고 STOPPED 상태로 종료
     - job이 다시 실행됐을 때 실행해야 할 Step을 인자로 넘기면 이전에 COMPLETED로 저장된 Step은 건너뛰고 중단 이후 Step부터 시작
 
-#### 예시 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#예시)
+#### 2.6.1.8 Sample_04
 
-```
+```java
 @Configuration
 @RequiredArgsConstructor
 public class HelloJobConfiguration {
@@ -1876,7 +2306,7 @@ public class HelloJobConfiguration {
 
 
 
-```
+```java
 @Configuration
 @RequiredArgsConstructor
 public class HelloJobConfiguration {
@@ -1908,13 +2338,13 @@ public class HelloJobConfiguration {
 - step1 실패 -> step2 성공 -> step2의 상태에 맞춰 Job의 BatchStatus, ExitStatus는 COMPLETED
 - step1 실패 -> step2 실패 -> StepExecution의 BatchStatusExitStatus, ExitStatus는 FAILED이지만 stopAndRestart로 인해 Job의 BatchStatus, ExitStatus는 STOPPED -> 재실행시 step3부터 시작
 
-#### 명확한 로직이 정해지지 않은 경우 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#명확한-로직이-정해지지-않은-경우)
+**명확한 로직이 정해지지 않은 경우**
 
 앞선 예시들을 보면 분명 조건을 명시해주지 않았던 작업에 대해서도 동작하는 것을 확인할 수 있습니다.
 이는 스프링 배치에서 Flow 조건에 따른 전환이 명확하게 명시되어 있지 않을 경우 후속 처리를 하기 때문입니다.
 예를 들면, 스텝이 성공했을 경우에만 조건으로 처리했을 경우, 스프링 배치에서 나머지 상태의 경우에 대한 조건을 기본적으로 추가해버립니다.
 
-```
+```java
 private void addDanglingEndStates() {
    Set<String> froms = new HashSet<>();
    for (StateTransition transition : transitions) {
@@ -1989,7 +2419,7 @@ step2에는 성공, 실패에 대한 모든 정의가 되어있지 않기 때문
 스프링 배치가 기본적으로 조건을 추가해주는 작업은 to의 인수로 있는 작업에 한에서만 입니다.
 따라서 step1은 to문에 들어있지 않기 때문에 기본적인 조건 추가가 안들어가게 되어 예외가 발생하는 것입니다.
 
-#### ExitStatus 커스텀하기 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#exitstatus-커스텀하기)
+#### 2.6.1.9 ExitStatus 커스텀하기
 
 간단하게 Step이 종료된 이후에 StepExecution의 ExitStatus를 PASS로 조작하는 리스너를 하나 만들어서 step2에 붙였습니다.
 사실 리스너를 붙여서 조작하는 방식보다는 바로 다음에 설명하는 JobExecutionDecider를 사용하는게 더 좋습니다.
@@ -2057,9 +2487,7 @@ public class HelloJobConfiguration {
 
 
 
-### JobExecutionDecider [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#jobexecutiondecider)
-
-------
+#### 2.6.1.10 JobExecutionDecider 
 
 앞서 ExitStatus의 상태값을 조작하기 위해서 step 안에 Listener를 추가했습니다.
 Step은 비즈니스 로직에 집중해야하는데 Step안에 flow를 위한 exitStatus 조작 코드가 들어가게 되니 그다지 좋은 방법은 아니라는 느낌이 듭니다.
@@ -2150,7 +2578,7 @@ public class CustomDecider implements JobExecutionDecider {
 
 
 
-### FlowJob 아키텍처 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#flowjob-아키텍처)
+#### 2.6.1.11 FlowJob 아키텍처
 
 ------
 
@@ -2165,16 +2593,16 @@ FlowExecutor가 SimpleFlow를 실행시킵니다.
 
 
 
-### SimpleFlow [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#simpleflow)
+### 2.6.2 SimpleFlow
 
 ------
 
-### 기본 개념 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#기본-개념-1)
+#### 2.6.2.1 기본 개념
 
 - 스프링 배치에서 제공하는 **Flow 인터페이스의 구현체** 로 각 요소(Step, Flow, JobExecutionDecider)들을 담고 있는 State를 실행시키는 도메인 객체
 - FlowBuilder를 사용해서 생성하며 Transition과 조합하여 여러 개의 Flow 및 중첩 Flow를 만들어 Job을 구성할 수 있습니다.
 
-### 구조 및 구성 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#구조-및-구성)
+#### 2.6.2.2 구조 및 구성
 
 ![그림4](https://backtony.github.io/assets/img/post/spring/batch/5/5-4.PNG)
 SimpleFlow는 Flow 인터페이스를 구현한 구현체입니다.
@@ -2196,7 +2624,7 @@ end()는 전체를 감싸는 SimpleFlow를 생성합니다.
 즉, 하나의 큰 SimpleFlow 안에 여러 개의 SimpleFlow가 담겨있는 것입니다.
 여기서 flow1은 Flow이므로 FlowState가 생성되며 이는 flow1을 필드로 갖게 되고, flow2 마찬가지로 FlowState가 생성되어 flow2를 담게 됩니다.
 
-### 아키텍처 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#아키텍처)
+#### 2.6.2.3 아키텍처
 
 ![그림6](https://backtony.github.io/assets/img/post/spring/batch/5/5-6.PNG)
 앞서 각각의 State는 Job이 구성되는 시점에 인수타입에 맞게 FlowBuilder에 의해 생성된다고 했습니다.
@@ -2217,7 +2645,7 @@ resume()메서드에서는 다음 State를 선택하기 위해서 nextState()를
 만약 다음 State가 FlowState일 경우, 그 안에 Flow가 존재하므로 다시 반복하게 됩니다.
 이런 구조로 SimpleFlow가 동작하게 됩니다.
 
-### 예시1 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#예시1)
+#### 2.6.2.4 Sample_05
 
 ```
 @Slf4j
@@ -2280,7 +2708,7 @@ public class HelloJobConfiguration {
 
 
 
-### 예시2 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#예시2)
+#### 2.6.2.5 Sample_06
 
 ```
 @Configuration
@@ -2358,17 +2786,17 @@ Job의 BatchStatus는 최종 흐름의 성공 여부에 따라 값이 반영됩�
 
 
 
-### FlowStep [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#flowstep)
+### 2.6.3 FlowStep
 
 ------
 
-### 기본 개념 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#기본-개념-2)
+#### 기본 개념
 
 - Step 내에 Flow를 할당하여 실행시키는 도메인 객체
 - JobStep이 Step 안에서 Job을 할당하는 것 처럼 Step 내에서 Flow를 할당하는 객체입니다.
 - flowStep도 Step이기 때문에 BatchStatus와 ExitStatus가 존재하는데, 품고 있는 Flow의 FlowExecutionStatus값을 통해 업데이트 됩니다.
 
-### 예시 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#예시-1)
+#### 예시
 
 ```
 @Configuration
@@ -2436,7 +2864,7 @@ public class HelloJobConfiguration {
 
 
 
-### @JobScope와 @StepScope [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#jobscope와-stepscope)
+#### @JobScope와 @StepScope
 
 ------
 
@@ -2455,17 +2883,17 @@ Scope는 스프링 컨테이너에서 빈이 관리되는 범위를 의미합니
   - 각 스레드마다 생성된 스코프 빈이 할당되어 각 스레드마다 프록시를 갖고 있어 빈을 호출 시 스레드마다 각각의 빈을 따로 생성하여 갖게 됩니다.
 - Bean과 연관되어 사용하는 것이기 때문에 Tasklet도 당연히 빈등록 해줘야 합니다.
 
-### JobScope [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#jobscope)
+#### JobScope
 
 - Step 선언문에 붙입니다.
 - @Value로 JobParameter과 JobExectionContext만 사용 가능합니다.
 
-### StepScope [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#stepscope)
+#### StepScope
 
 - Tasklet이나 ItemReader, ItemWriter, ItemProcessor 선언문에 붙입니다.
 - @Value로 JobParameter, JobExecutionContext, StepExecutionContet 사용 가능합니다.
 
-### 예시 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#예시-2)
+#### Sample_07
 
 ```
 @Configuration
@@ -2534,7 +2962,7 @@ public class CustomStepListener implements StepExecutionListener {
 @Value를 통해서 런타임시 주입되는 값들에 대해서는 코드로 아무것도 주지 않으면 컴파일 에러가 나기 때문에 null값으로 채워줍니다.
 리스너를 통해서 name, name2 값을 넣어줬고, 실행 시점에 IDE의 Configuration을 통해서 arguments로 message=message로 주고 실행시키면 주입한 값이 정상적으로 찍히게 됩니다.
 
-### 사용하는 이유 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#사용하는-이유)
+#### 사용하는 이유
 
 처음 공부하는 입장에서는 사실 위에 설명과 예시를 보고 도대체 왜 사용하는지에 대한 의문이 들 수 있어서 다시 정리하겠습니다.
 
@@ -2547,7 +2975,7 @@ public class CustomStepListener implements StepExecutionListener {
   - 하지만 런타임 시점에 빈을 만들게 되면 값을 다 받아놓고(표현식에 명시한 값들) 빈을 만들기 때문에 주입이 가능하게 됩니다.
 - 병렬 처리시에 각 스레드마다 Step 객체가 생성되어 할당되기 때문에 Tasklet에 멤버 변수가 존재해도 동시성에 문제가 없습니다.
 
-### 아키텍처 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#아키텍처-1)
+#### 아키텍처
 
 - 프록시 객체 생성
   - @JobScope, @StepScope 애노테이션이 붙은 빈 선언은 내부적으로 프록시 빈 객체가 생성되어 등록됩니다.
@@ -2564,7 +2992,7 @@ public class CustomStepListener implements StepExecutionListener {
 3. 있으면 찾아서 반환합니다.
 4. 없으면 빈 팩토리에서 실제 Step빈을 생성하고 JobContext에 담고 이를 반환합니다.
 
-### Chunk 기반에서 사용 시 주의사항 [Permalink](https://backtony.github.io/spring/2022-01-23-spring-batch-5/#chunk-기반에서-사용-시-주의사항)
+#### Chunk 기반에서 사용 시 주의사항
 
 ```
 @Bean
@@ -2604,426 +3032,13 @@ public JpaPagingItemReader<? extends Customer> customItemReader(
 }
 ```
 
-### Decider
 
-TODO
 
 
 
-### Tasklet 
 
-TODO
 
 
-
-
-
-### Chunk
-
-
-
-### 기본 개념 [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#기본-개념)
-
-- **여러 개의 아이템을 묶은 하나의 덩어리** 를 의미합니다.
-- 한 번에 하나씩 아이템을 입력받아 Chunk 단위의 덩어리로 만든 후 Chunk 단위로 트랜잭션을 처리합니다.
-  - Chunk 단위로 Commit과 Rollback
-- 일반적으로 대용량 데이터를 한 번에 처리하는 것이 아닌 청크 단위로 쪼개어 반복해서 수행합니다.
-
-### Chunk<I> , Chunk<O> [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#chunki--chunko)
-
-- Chunk<I>
-  - ItemReader로 읽은 하나의 아이템을 Chunk 크기만큼 반복해서 저장하는 타입
-- Chunk<O>
-  - ItemReader로부터 전달받은 Chunk<I>를 참조해서 ItemProcessor에서 적절하게 가공한 뒤 ItemWriter로 전달되는 타입
-  - 여기서 O는 Processor가 없다면 ItemReader로부터 전달받는 타입, Processor가 있다면 Processor로부터 전달받는 타입입니다.
-
-### 아키텍처 [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#아키텍처)
-
-![그림1](https://backtony.github.io/assets/img/post/spring/batch/6/6-1.PNG)
-
-1. ItemReader가 Source를 한 건씩 읽고 한 건씩 Chunk크기 만큼 Chunk<I>에 저장합니다.
-2. Chunk 크기만큼 쌓였다면 Chunk<I>를 ItemProcessor에 전달합니다.
-3. ItemProcessor는 전달받은 Chunk를 적절하게 가공해서 Chunk<O>에 저장합니다.
-4. Chunk<O>를 ItemWriter에 전달합니다.
-5. itemWriter는 데이터를 쓰기작업합니다.
-
-**ItemReader와 ItemProcessor는 각각의 하나씩 아이템을 처리하지면 ItemWriter는 Chunk 크기만큼을 한 번에 일괄 처리합니다.**
-
-### 내부 구조 [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#내부-구조)
-
-![그림2](https://backtony.github.io/assets/img/post/spring/batch/6/6-2.PNG)
-
-청크사이즈만큼 가질 수 있는 List와 예외에 대한 필드들이 있습니다.
-내부 클래스로 ChunkIterator를 갖고 있는데 이는 Chunk가 갖고있는 items들을 한 건씩 가져올 때 사용합니다.
-
-
-
-### ChunkOrientedTasklet [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#chunkorientedtasklet)
-
-------
-
-### 기본 개념 [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#기본-개념-1)
-
-- 스프링 배치에서 제공하는 **Tasklet 구현체로 Chunk 지향 프로세싱을 담당하는 도메인 객체** 입니다.
-- ItemReader, ItemWriter, ItemProcessor를 사용해 Chunk 기반 데이터 입출력을 담당합니다.
-- TaskletStep에 의해서 반복적으로 실행되며, ChunkOrientedTasklet이 실행될 때마다 **매번 새로운 트랜잭션이 생성** 되어 처리됩니다.
-- exception이 발생할 경우, 해당 Chunk는 롤백되며 이전에 커밋한 Chunk는 완료 상태가 유지됩니다.
-- 내부적으로 ItemReader를 핸들링하는 ChunkProvider와 ItemProcessor, ItemWriter를 핸들링하는 ChunkProcessor 타입의 구현체를 갖습니다.
-
-### 실행 순서 [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#실행-순서)
-
-![그림3](https://backtony.github.io/assets/img/post/spring/batch/6/6-3.PNG)
-
-1. TaskletStep이 execute 메서드로 ChunkOrientedTasklet를 호출합니다.
-2. ChunkOrientedTasklet는 provide 메서드로 ChunkProvider를 호출합니다.
-3. ChunkProvider는 ItemReader에게 Item을 **한 건씩** read하도록 지시합니다.
-4. 이 과정이 Chunk size만큼 반복됩니다.
-5. ChunkOrientedTasklet는 ChunkProcessor에게 읽은 데이터를 가공하라고 명령합니다.
-6. ChunkProcessor는 ItemProcessor에게 명령하고 ItemProcessor는 전달된 아이템 개수만큼 반복하여 가공합니다.
-7. ChunkProcessor는 가공된 아이템을 ItemWriter에 전달합니다.
-8. ItemWriter는 저장하는 등 쓰기 처리를 합니다.
-9. 이것이 하나의 Chunk Size 사이클로 이후 다시 ChunkOrientedTasklet에 가서 읽을 Item이 없을 때까지 반복합니다.
-
-### ChunkProvider [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#chunkprovider)
-
-- **ItemReader를 사용해서 소스로부터 아이템을 Chunk size만큼 읽어서 Chunk단위로 만들어 제공하는 도메인 객체**
-- Chunk<I>를 만들고 내부적으로 반복문을 사용해서 ItemReader.read()를 계속 호출하면서 item을 Chunk<I>에 쌓습니다.
-  - Chunk size만큼 item을 읽으면 반복문이 종료되고 ChunkProcessor로 넘깁니다.
-  - ItemReader가 읽은 item이 null일 경우 read 반복문이 종료되고 해당 Step의 반복문도 종료됩니다.
-- 외부로부터 ChunkProvider이 호출될 때마다 **새로운 Chunk** 를 생성합니다.
-- 기본 구현체로 SimpleChunkProvider, FaultTolerantChunkProvider이 있습니다.
-
-### ChunkProcessor [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#chunkprocessor)
-
-- **ItemProcessor를 사용해서 Item을 변형, 가공, 필터링하고 ItemWriter를 사용해서 Chunk 데이터를 저장, 출력합니다.**
-
-- Chunk<O>를 만들고 앞에서 넘어온 Chunk<I>의 item을
-
-   
-
-  한 건씩
-
-   
-
-  itemProcessor를 통해 처리한 후 Chunk<O>에 저장합니다.
-
-  - 만약 ItemProcessor가 존재하지 않는다면 바로 Chunk<O>에 저장합니다.
-
-- ItemProcessor 처리가 완료되면 Chunk<O>에 있는 List<item>을 ItemWriter에게 전달합니다.
-
-- **ItemWriter 처리가 완료되면 Chunk 트랜잭션이 종료되고 Step 반복문에서는 다시 ChunkOrientedTasklet가 새롭게 실행됩니다.**
-
-- ItemWriter는 Chunk size만큼 데이터를 커밋하기 때문에 Chunk size는 곧 Commit Interval(커밋 간격)이 됩니다.
-
-- 기본 구현체로 SimpleChunkProcessor와 FaultTolerantChunkProcessor가 있습니다.
-
-### 기본 API [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#기본-api)
-
-![그림4](https://backtony.github.io/assets/img/post/spring/batch/6/6-4.PNG)
-위에 Chunk가 두 개 표기되어 있는데 실제로는 한 개만 사용 가능합니다.
-두가지 방법이 있다 정도로 알아두면 될 것 같습니다.
-
-### ItemReader [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#itemreader)
-
-![그림5](https://backtony.github.io/assets/img/post/spring/batch/6/6-5.PNG)
-
-- 다양한 입력으로부터 데이터를 읽어서 제공하는 인터페이스
-
-   
-
-  입니다.
-
-  - 플랫 파일 - csv, txt
-  - XML, Jsono
-  - Database
-  - Message Queuing 서비스
-  - Custom reader
-
-- 다수의 구현체들이 ItemReader와 ItemStream 인터페이스를 동시에 구현하고 있습니다.
-
-  - ItemStream은 파일 스트림 연결 종료, DB 커넥션 연결 종료 등의 장치 초기화 등의 작업에 사용됩니다.
-  - ExecutionContext에 read와 관련된 여러 가지 상태 정보를 저장해두고 재시작 시 참조됩니다.
-
-- ChunkOrientedTasklet 실행 시 필수적 요소로 설정해야 합니다.
-
-- T read()
-
-  - 입력 데이터를 읽고 다음 데이터로 이동합니다.
-  - 아이템 하나를 리턴하며 더 이상 아이템이 없는 경우 null 리턴합니다.
-  - 아이템 하나는 파일의 한 줄, DB의 한 row, XML 파일에서 하나의 엘리먼트를 의미합니다.
-  - 더 이상 처리해야 할 item이 없어도 예외가 발생하지 않고 itemProcessor와 같은 다음 단계로 넘어갑니다.
-
-### ItemWriter [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#itemwriter)
-
-![그림6](https://backtony.github.io/assets/img/post/spring/batch/6/6-6.PNG)
-
-- Chunk 단위로 데이터를 받아 일괄 출력 작업을 위한 인터페이스
-
-   
-
-  입니다.
-
-  - 플랫 파일 - csv, txt
-  - XML, Jsono
-  - Database
-  - Message Queuing 서비스
-  - Mail Service
-  - Custom reader
-
-- 다수의 구현체들이 itemReader와 같은 맥락으로 itemWriter와 ItemStream을 동시에 구현하고 있습니다.
-
-- 하나의 아이템이 아닌 아이템 리스트를 전달받아 수행합니다.
-
-- ChunkOrientedTasklet 실행 시 필수적 요소로 설정해야 합니다.
-
-- void write()
-
-  - 출력 데이터를 아이템 리스트로 받아서 처리합니다.
-  - 출력이 완료되고 트랜잭션이 종료되면 새로운 Chunk 단위 프로세스로 이동합니다.
-
-### ItemProcessor [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#itemprocessor)
-
-![그림7](https://backtony.github.io/assets/img/post/spring/batch/6/6-7.PNG)
-
-- **데이터를 출력하기 전에 데이터를 가공 및 필터링 역할을 하는 인터페이스** 입니다.
-- ItemReader 및 ItemWriter와 분리되어 비즈니스 로직을 구현할 수 있습니다.
-- ItemReader로부터 받은 아이템을 특정 타입으로 변환해서 ItemWriter에 넘겨 줄 수 있습니다.
-- Itemreader로부터 받은 아이템들 중 필터과정을 거쳐서 원하는 아이템들만 ItemWriter로 넘겨줄 수 있습니다.
-- ChunkOrientedTasklet 실행 시 선택적 요소기 때문에 필수 요소는 아닙니다.
-- O process()
-  - I 제네릭은 ItemReader에서 받을 데이터 타입
-  - O 제네릭은 ItemWriter에게 보낼 데이터 타입
-  - **아이템을 하나씩 가공 처리하며 null을 리턴할 경우 해당 아이템은 Chunk<O>에 저장되지 않습니다.**
-- ItemStream을 구현하지 않고 거의 대부분 Customizing해서 사용하기 때문에 기본적으로 제공되는 구현체가 적습니다.
-
-### ItemStream [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#itemstream)
-
-![그림8](https://backtony.github.io/assets/img/post/spring/batch/6/6-8.PNG)
-
-- ItemReader와 ItemWriter 처리 과정 중 상태를 저장하고 오류가 발생하여 재시작 시 해당 상태를 참조하여 실패한 곳부터 재시작하도록 지원합니다.
-- 리소스를 열고(open) 닫아야(close) 하며 입출력 장치 초기화 등의 작업을 해야하는 경우 사용합니다.
-  - 대부분의 구현체는 다 만들어져 있기 때문에 구현체를 사용한다면 직접 구현할 일은 없습니다.
-- open과 update 메서드에서 ExecutionContext를 인수로 받는데 이는 상태 정보를 ExecutionContext에 업데이트 해두고 재시작 시 open에서 해당 정보를 가져와서 사용하기 때문입니다.
-  - 예를 들어, 총 10개의 데이터를 Chunk 5단위로 진행한다면 총 2번의 update가 발생합니다. 만약 9번째 데이터를 읽는 과정에서 문제가 발생하면 첫번째 청크 커밋은 완료가 된 상태로 재시작 시에는 open에서 ExecutionContext에서 정보를 가져와 6번째 데이터부터 다시 시작할 수 있습니다.
-- Stream이 구현된 ItemReader와 ItemWriter를 직접 만들려면 ItemStreamReader, ItemStreamWrtier 인터페이스를 구현하면 됩니다.
-
-
-
-### 최종 아키텍처 [Permalink](https://backtony.github.io/spring/2022-01-24-spring-batch-6/#최종-아키텍처)
-
-------
-
-![그림9](https://backtony.github.io/assets/img/post/spring/batch/6/6-9.PNG)
-
-1. Job을 실행하면 TaskletStep이 실행됩니다.
-2. Tasklet은 내부에 RepeatTemplate라는 반복기를 가지고 있어 ChunkOrientedTasklet을 반복합니다.
-3. ChunkOrientedTasklet이 실행될 때 스프링 배치는 Transaction 경계를 생성합니다.
-4. Chunk 단위로 작업을 시작합니다.
-5. SimpleChunkProvider도 내부적으로 RepeatTmplate 반복기를 갖고 있어 ItemReader을 Chunk size만큼 반복시켜서 데이터를 읽습니다.
-6. Chunk Size만큼 읽고 읽은 아이템이 담긴 Chunk<I>를 SimpleChunkProcessor에 넘깁니다.
-7. SimpleChunkProcessor는 전달받은 Chunk 데이터를 한 건씩 읽어서 ItemProcessor로 데이터를 가공하여 Chunk<O>에 저장합니다.
-8. ItemWriter에게 Chunk가 갖고 있는 List값을 전달하고 ItemWriter는 출력 처리를 합니다.(트랜잭션 커밋)
-9. 이 과정이 청크 단위로 반복되고 ItemReader에서 null 값을 읽을 때 반복 작업이 끝나게 됩니다.
-
-만약 중간에 예외가 발생한다면 트랜잭션 롤백이 발생하고 작업이 중단됩니다.
-만약 ItemReader에서 null값을 읽어오게 된다면 RepeatStatus.FINISHED를 통해 현재 작업을 마지막으로 다음부터는 반복 작업이 일어나지 않게 됩니다.
-**Chunk 단위마다 새로운 트랜잭션** 이 생성되고 커밋되는 과정이 존재하는 것을 알아둡시다.
-
-
-
-
-
-Spring Batch에서의 Chunk란 데이터 덩어리로 작업 할 때 **각 커밋 사이에 처리되는 row 수**를 얘기합니다.
-즉, Chunk 지향 처리란 **한 번에 하나씩 데이터를 읽어 Chunk라는 덩어리를 만든 뒤, Chunk 단위로 트랜잭션**을 다루는 것을 의미합니다.
-
-여기서 트랜잭션이라는게 중요한데요.
-Chunk 단위로 트랜잭션을 수행하기 때문에 **실패할 경우엔 해당 Chunk 만큼만 롤백**이 되고, 이전에 커밋된 트랜잭션 범위까지는 반영이 된다는 것입니다.
-
-Chunk 지향 처리가 결국 Chunk 단위로 데이터를 처리한다는 의미이기 때문에 그림으로 표현하면 아래와 같습니다.
-
-![chunk-process](https://t1.daumcdn.net/cfile/tistory/999A513E5B814C4A12)
-
-> [공식 문서의 그림](https://docs.spring.io/spring-batch/4.0.x/reference/html/index-single.html#chunkOrientedProcessing)은 **개별 item이 처리되는 것만** 다루고 있습니다.
-> 위 그림은 Chunk 단위까지 다루고 있어 조금 다르니 주의해주세요.
-
-- Reader에서 데이터를 하나 읽어옵니다
-- 읽어온 데이터를 Processor에서 가공합니다
-- 가공된 데이터들을 별도의 공간에 모은 뒤, Chunk 단위만큼 쌓이게 되면 Writer에 전달하고 Writer는 일괄 저장합니다.
-
-**Reader와 Processor에서는 1건씩 다뤄지고, Writer에선 Chunk 단위로 처리**된다는 것만 기억하시면 됩니다.
-
-Chunk 지향 처리를 Java 코드로 표현하면 아래처럼 될 것 같습니다.
-
-```java
-for(int i=0; i<totalSize; i+=chunkSize){ // chunkSize 단위로 묶어서 처리
-    List items = new Arraylist();
-    for(int j = 0; j < chunkSize; j++){
-        Object item = itemReader.read()
-        Object processedItem = itemProcessor.process(item);
-        items.add(processedItem);
-    }
-    itemWriter.write(items);
-}
-```
-
-**chunkSize별로 묶어서 처리**된다는 의미가 이해가 되셨나요?
-자 그럼 이제 Chunk 지향 처리가 어떻게 되고 있는지 실제 Spring Batch 내부 코드를 보면서 알아보겠습니다.
-
-### 6-2. ChunkOrientedTasklet 엿보기
-
-Chunk 지향 처리의 전체 로직을 다루는 것은 `ChunkOrientedTasklet` 클래스입니다.
-클래스 이름만 봐도 어떤 일을 하는지 단번에 알 수 있을것 같습니다.
-
-![tasklet1](https://t1.daumcdn.net/cfile/tistory/9903723A5B814C4D01)
-
-여기서 자세히 보셔야할 코드는 `execute()` 입니다.
-Chunk 단위로 작업하기 위한 전체 코드가 이곳에 있다고 보시면 되는데요.
-내부 코드는 아래와 같습니다.
-
-![tasklet2](https://t1.daumcdn.net/cfile/tistory/99C279485B814C4D26)
-
-- `chunkProvider.provide()`로 Reader에서 Chunk size만큼 데이터를 가져옵니다.
-- `chunkProcessor.process()` 에서 Reader로 받은 데이터를 가공(Processor)하고 저장(Writer)합니다.
-
-데이터를 가져오는 `chunkProvider.provide()`를 가보시면 어떻게 데이터를 가져오는지 알 수 있습니다.
-
-![tasklet3](https://t1.daumcdn.net/cfile/tistory/9969C3335B814C4D2A)
-
-`inputs`이 ChunkSize만큼 쌓일때까지 `read()`를 호출합니다.
-이 `read()` 는 내부를 보시면 실제로는 `ItemReader.read`를 호출합니다.
-
-![tasklet4](https://t1.daumcdn.net/cfile/tistory/997C99365B814C4C24)
-
-![tasklet5](https://t1.daumcdn.net/cfile/tistory/992738395B814C4D34)
-
-즉, `ItemReader.read`에서 1건씩 데이터를 조회해 Chunk size만큼 데이터를 쌓는 것이 `provide()`가 하는 일입니다.
-
-자 그럼 이렇게 쌓아준 데이터를 어떻게 가공하고 저장하는지 한번 확인해보겠습니다.
-
-### 6-3. SimpleChunkProcessor 엿보기
-
-Processor와 Writer 로직을 담고 있는 것은 `ChunkProcessor` 가 담당하고 있습니다.
-
-![process0](https://t1.daumcdn.net/cfile/tistory/999AC5365B814C4A37)
-
-인터페이스이기 때문에 실제 구현체가 있어야 하는데요.
-기본적으로 사용되는 것이 `SimpleChunkProcessor` 입니다.
-
-![process1](https://t1.daumcdn.net/cfile/tistory/99643D475B814C4D22)
-
-위 클래스를 보시면 Spring Batch에서 Chunk 단위 처리를 어떻게 하는지 아주 상세하게 확인할 수 있습니다.
-처리를 담당하는 핵심 로직은 `process()` 입니다.
-이 `process()`의 코드는 아래와 같습니다.
-
-![process2](https://t1.daumcdn.net/cfile/tistory/99DE13375B814C4C36)
-
-- ```
-  Chunk<I> inputs
-  ```
-
-  를 파라미터로 받습니다.
-
-  - 이 데이터는 앞서 `chunkProvider.provide()` 에서 받은 ChunkSize만큼 쌓인 item입니다.
-
-- `transform()` 에서는 전달 받은 `inputs`을 `doProcess()`로 전달하고 변환값을 받습니다.
-
-- ```
-  transform()
-  ```
-
-  을 통해 가공된 대량의 데이터는
-
-   
-
-  ```
-  write()
-  ```
-
-  를 통해 일괄 저장됩니다.
-
-  - `write()`는 저장이 될수도 있고, 외부 API로 전송할 수 도 있습니다.
-  - 이는 개발자가 ItemWriter를 어떻게 구현했는지에 따라 달라집니다.
-
-여기서 `transform()`은 반복문을 통해 `doProcess()`를 호출하는데요.
-해당 메소드는 ItemProcessor의 `process()`를 사용합니다.
-
-![process3](https://t1.daumcdn.net/cfile/tistory/993725375B814C4D2F)
-
-`doProcess()` 를 처리하는데 만약 ItemProcessor가 없다면 item을 그대로 반환하고 있다면 ItemProcessor의 `process()`로 가공하여 반환합니다.
-
-![process4](https://t1.daumcdn.net/cfile/tistory/9942063F5B814C4D05)
-
-그리고 이렇게 가공된 데이터들은 위에서도 나와있듯이 SimpleChunkProcessor의 `doWrite()` 를 호출하여 일괄 처리 합니다.
-
-![process4](https://t1.daumcdn.net/cfile/tistory/99C3D0375B814C4C14)
-
-자 Chunk 지향 처리에 대해 실제 코드를 보면서 어떻게 처리되는지 알아보았습니다.
-아래에서는 ChunkSize에 대한 오해를 한번 풀어보겠습니다.
-
-### 6-4. Page Size vs Chunk Size
-
-기존에 Spring Batch를 사용해보신 분들은 아마 PagingItemReader를 많이들 사용해보셨을 것입니다.
-PagingItemReader를 사용하신 분들 중 간혹 Page Size와 Chunk Size를 같은 의미로 오해하시는 분들이 계시는데요.
-**Page Size와 Chunk Size는 서로 의미하는 바가 다릅니다**.
-
-**Chunk Size는 한번에 처리될 트랜잭션 단위**를 얘기하며, **Page Size는 한번에 조회할 Item의 양**을 얘기합니다.
-
-자 그럼 이제 2개가 어떻게 다른지 실제 Spring Batch의 ItemReader 코드를 직접 들여다보겠습니다.
-
-PagingItemReader의 부모 클래스인 `AbstractItemCountingItemStreamItemReader`의 `read()` 메소드를 먼저 보겠습니다.
-
-![read1](https://t1.daumcdn.net/cfile/tistory/99CEA6335B814C4C23)
-
-보시는것처럼 읽어올 데이터가 있다면 `doRead()`를 호출합니다.
-
-`doRead()`의 코드는 아래와 같습니다.
-
-![read2](https://t1.daumcdn.net/cfile/tistory/99A4433F5B814C4D0E)
-
-`doRead()`에서는 현재 읽어올 데이터가 없거나, Page Size를 초과한 경우 `doReadPage()`를 호출합니다.
-읽어올 데이터가 없는 경우는 read가 처음 시작할 때를 얘기합니다.
-Page Size를 초과하는 경우는 예를 들면 Page Size가 10인데, 이번에 읽어야할 데이터가 11번째 데이터인 경우입니다.
-이럴 경우 Page Size를 초과했기 때문에 `doReadPage()` 를 호출한다고 보시면 됩니다.
-
-즉, **Page 단위로 끊어서 조회**하는 것입니다.
-
-> 게시판 만들기에서 페이징 조회를 떠올려보시면 쉽게 이해가 되실것 같습니다.
-
-`doReadPage()`부터는 하위 구현 클래스에서 각자만의 방식으로 페이징 쿼리를 생성합니다.
-여기서는 보편적으로 많이 사용하시는 **JpaPagingItemReader** 코드를 살펴보겠습니다.
-
-JpaPagingItemReader의 `doReadPage()`의 코드는 아래와 같습니다.
-
-![read3](https://t1.daumcdn.net/cfile/tistory/99999E405B814C4D24)
-
-Reader에서 지정한 Page Size만큼 `offset`, `limit` 값을 지정하여 페이징 쿼리를 생성 (`createQuery()`)하고, 사용 (`query.getResultList()`) 합니다.
-쿼리 실행 결과는 `results`에 저장합니다.
-이렇게 저장된 `results`에서 `read()` 가 **호출될때마다 하나씩 꺼내서 전달**합니다.
-
-즉, Page Size는 **페이징 쿼리에서 Page의 Size를 지정하기 위한 값**입니다.
-
-만약 2개 값이 다르면 어떻게 될까요?
-PageSize가 10이고, ChunkSize가 50이라면 **ItemReader에서 Page 조회가 5번 일어나면 1번 의 트랜잭션이 발생하여 Chunk가 처리**됩니다.
-
-한번의 트랜잭션 처리를 위해 5번의 쿼리 조회가 발생하기 때문에 성능상 이슈가 발생할 수 있습니다. 그래서 Spring Batch의 PagingItemReader에는 클래스 상단에 다음과 같은 주석을 남겨두었습니다.
-
-> Setting a fairly large page size and using a commit interval that matches the page size should provide better performance.
-> (상당히 큰 페이지 크기를 설정하고 페이지 크기와 일치하는 커미트 간격을 사용하면 성능이 향상됩니다.)
-
-성능상 이슈 외에도 2개 값을 다르게 할 경우 JPA를 사용하신다면 영속성 컨텍스트가 깨지는 문제도 발생합니다.
-(이전에 관련해서 [문제를 정리](http://jojoldu.tistory.com/146)했으니 참고해보세요)
-
-2개 값이 의미하는 바가 다르지만 위에서 언급한 여러 이슈로 **2개 값을 일치시키는 것이 보편적으로 좋은 방법**이니 꼭 2개 값을 일치시키시길 추천드립니다.
-
-
-
-
-
-## Reader & Processor & Writer 설정
-
-TODO
-
-File,DB(JDBC,JPA),Redis,Kafka,MongoDB
 
 
 
@@ -3070,11 +3085,11 @@ public interface JobExecutionListener {
 
 
 
-### 2.7.2 Example
+
 
 listener를 등록하는 방식은 인터페이스를 구현하거나 애노테이션을 사용하는 방식이 있습니다.
 
-#### 2.7.2.1 인터페이스 구현 방식
+### **2.7.2 Example_인터페이스 구현 방식**
 
 ```java
 @Configuration
@@ -3163,7 +3178,7 @@ public class CustomStepExecutionListener implements StepExecutionListener {
 StepListener의 반환값으로 ExitStatus를 수정해서 Job의 ExitStatus에 반영되는 값을 수정할 수 있습니다.
 위 코드에서는 리스너를 new로 생성해서 등록했지만 빈으로 등록해서 DI받아서 등록해도 됩니다.
 
-#### 2.7.2.2 Annotation 방식
+### 2.7.3 Example_Annotation 방식
 
 ```java
 public class CustomJobAnnotationExecutionListener {
@@ -3190,7 +3205,7 @@ public class CustomJobAnnotationExecutionListener {
 
 
 
-### ChunkListener / ItemReadListener / ItemProcessorListener / ItemWriterListener [Permalink](https://backtony.github.io/spring/2022-01-30-spring-batch-12/#chunklistener--itemreadlistener--itemprocessorlistener--itemwriterlistener)
+### 2.7.4 ChunkListener / ItemReadListener / ItemProcessorListener / ItemWriterListener 
 
 ------
 
@@ -3204,9 +3219,9 @@ public class CustomJobAnnotationExecutionListener {
 
 네 가지 리스너 모두 애노테이션 방식을 지원합니다.
 
-### 예시 [Permalink](https://backtony.github.io/spring/2022-01-30-spring-batch-12/#예시-1)
+### 2.7.4 Sample_08
 
-```
+```java
 @Configuration
 @RequiredArgsConstructor
 public class HelloJobConfiguration {
@@ -4045,7 +4060,7 @@ recover코드로 진입하여 여기서 해당 item을 skip 처리하고 skipCou
 
 #### 예시 : item마다 갖는 retry Count [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#예시--item마다-갖는-retry-count)
 
-```
+```java
 @Configuration
 @RequiredArgsConstructor
 public class HelloJobConfiguration {
@@ -4136,7 +4151,7 @@ itemReader = 10
 
 #### 예시 : recover custom [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#예시--recover-custom)
 
-```
+```java
 @Configuration
 @RequiredArgsConstructor
 public class HelloJobConfiguration {
@@ -4259,605 +4274,6 @@ retryTemplate을 직접 만들어서 원하는 세팅을 해주고, 만든 retry
 doWithRetry에는 프로세서에서 할 일반적인 작업을 명시하고 recover에는 retry 횟수 초과 시 할 작업을 명시합니다.
 이는 기존의 동작 방식과 다르게 RetryableException이 터지면 청크의 첫 단계부터 다시 시작하는게 아니라 해당 item만 그대로 doWithRetry에서 다시 돌립니다.
 횟수 제한을 2로 두었으므로 3번째 실패부터 recover 로직을 타게 됩니다.
-
-
-
-
-
-## 2.9 Multi-Thread 
-
-### 단일 스레드 vs 멀티 스레드 [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#단일-스레드-vs-멀티-스레드)
-
-------
-
-![그림1](https://backtony.github.io/assets/img/post/spring/batch/11/11-1.PNG)
-
-- 프로세스 내 특정 작업을 처리하는 스레드가 하나일 경우 단일 스레드, 여러 개일 경우 멀티 스레드라고 합니다.
-- 작업 처리에 있어서 단일 스레드와 멀티 스레드의 선택 기준은 어떤 방식이 자원을 효율적으로 사용하고 성능 처리에 유리한가 하는 점입니다.
-- 일반적으로 복잡한 처리나 대용량 데이터를 다루는 작업일 경우 전체 소요 시간 및 성능상의 이점을 가져오기 위해 멀티 스레드 방식을 사용합니다.
-- 멀티 스레드 처리 방식은 데이터 동기화 이슈가 존재하기 때문에 주의해야 합니다.
-
-
-
-### 스프링 배치 스레드 모델 [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#스프링-배치-스레드-모델)
-
-------
-
-- 스프링 배치는 기본적으로 단일 스레드 방식으로 작업을 처리합니다.
-- 성능 향상과 대규모 데이터 처리 작업을 위한 비동기 처리 및 Scale out 기능을 제공합니다.
-- Local과 Remote 처리를 지원합니다.
-- AsyncItemProcessor / AsyncItemWriter
-  - ItemProcessor에게 별도의 스레드가 할당되어 작업을 처리하는 방식
-- Multi-threaded Step
-  - Step 내 Chunk 구조인 ItemReader, ItemProcessor, ItemWriter 마다 여러 스레드가 할당되어 실행하는 방식
-- Remote Chunking
-  - 분산환경처럼 Step 처리가 여러 프로세스로 분할되어 외부의 다른 서버로 전송되어 처리하는 방식
-- Parallel Steps
-  - Step마다 스레드가 할당되어 여러 개의 Step을 병렬로 실행하는 방법
-- Partitioning
-  - Master/Slave 방식으로 Master가 데이터를 파티셔닝 한 다음 각 파티션에게 스레드를 할당하여 Slave가 독립적으로 작동하는 방식
-
-
-
-### AsyncItemProcessor / AsyncItemWriter [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#asyncitemprocessor--asyncitemwriter)
-
-------
-
-- Step 안에서 ItemProcessor가 비동기적으로 동작하는 구조입니다.
-- AsyncItemProcessor / AsyncItemWriter 둘이 함께 구성되어야 합니다.
-- AsyncItemProcessor로부터 AsyncItemWriter가 받는 최종 결과값은 List<Future<T>> 타입이며 비동기 실행이 완료될 때까지 대기합니다.
-- 사용하려면 Spring-batch-integration 의존성이 필요합니다.
-  - implementation ‘org.springframework.batch:spring-batch-integration’
-
-### 구조 [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#구조)
-
-![그림3](https://backtony.github.io/assets/img/post/spring/batch/11/11-3.PNG)
-![그림2](https://backtony.github.io/assets/img/post/spring/batch/11/11-2.PNG)
-
-AsyncItemProcessor는 ItemProcessor에 실제 작업을 위임합니다.
-TaskExecutor로 비동기 실행을 하기 위한 스레드를 만들고 해당 스레드는 FutureTask를 실행합니다.
-FutureTask는 Callable 인터페이스를 실행하면서 그 안에서 ItemProcessor가 작업을 처리하게 됩니다.(Callable은 Runnable과 같이 스레드의 작업을 정의하는데 반환값이 있는 것)
-이런 하나의 단위를 AsyncItemProcessor가 제공해서 처리를 위임하고 메인 스레드는 바로 다음 AsyncItemWriter로 넘어갑니다.
-AsyncItemWriter도 ItemWriter에게 작업을 위임합니다.
-ItemWriter는 Future 안에 있는 item들을 꺼내서 일괄처리하게 되는데 이때 Processor에서 작업 중인 비동기 실행의 결과값들을 모두 받아오기까지 대기합니다.
-
-### API [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#api)
-
-![그림4](https://backtony.github.io/assets/img/post/spring/batch/11/11-4.PNG)
-
-1. Step 기본 설정
-2. 청크 개수 설정
-3. ItemReader 설정(비동기 아님)
-4. 비동기 실행을 위한 AsyncItemProcessor 설정
-   - 스레드 풀 개수 만큼 스레드가 생성되어 비동기로 실행됩니다.
-   - 내부적으로 실제 ItemProcessor에게 실행을 위임하고 결과를 Future에 저장합니다.
-5. AsyncItemWriter 설정
-   - 비동기 실행 결과 값들을 모두 받오이기 까지 대기합니다.
-   - 내부적으로 실제 ItemWriter에게 최종 결과값을 넘겨주고 실행을 위임합니다.
-6. TaskletStep 생성
-
-### 예시 [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#예시)
-
-```
-implementation 'org.springframework.batch:spring-batch-integration'
-```
-
-
-
-의존성 추가가 필요합니다.
-
-```
-@Configuration
-@RequiredArgsConstructor
-public class HelloJobConfiguration {
-    private final JobBuilderFactory jobBuilderFactory;
-    private final StepBuilderFactory stepBuilderFactory;
-    private final DataSource dataSource;
-    private final EntityManagerFactory entityManagerFactory;
-    private int chunkSize = 10;
-
-    @Bean
-    public Job helloJob() {
-        return jobBuilderFactory.get("job")
-                .start(step1())
-                .incrementer(new RunIdIncrementer())
-                .build();
-    }
-
-    @Bean
-    public Step step1() {
-        return stepBuilderFactory.get("step")
-                .<Customer, Future<Customer2>>chunk(chunkSize) // Future 타입
-                .reader(customItemReader())
-                .processor(customAsyncItemProcessor())
-                .writer(customAsyncItemWriter())
-                .build();
-    }
-
-    @Bean
-    public ItemReader<? extends Customer> customItemReader() {
-        return new JpaPagingItemReaderBuilder<Customer>()
-                .name("customItemReader")
-                .pageSize(chunkSize)
-                .entityManagerFactory(entityManagerFactory)
-                .queryString("select c from Customer c order by c.id")
-                .build();
-    }
-
-    @Bean
-    public AsyncItemProcessor<Customer, Customer2> customAsyncItemProcessor() {
-        AsyncItemProcessor<Customer, Customer2> asyncItemProcessor = new AsyncItemProcessor<>();
-        asyncItemProcessor.setDelegate(customItemProcessor()); // customItemProcessor 로 작업 위임
-        asyncItemProcessor.setTaskExecutor(new SimpleAsyncTaskExecutor()); // taskExecutor 세팅
-
-        return asyncItemProcessor;
-    }
-
-    @Bean
-    public ItemProcessor<Customer, Customer2> customItemProcessor() {
-        return new ItemProcessor<Customer, Customer2>() {
-            @Override
-            public Customer2 process(Customer item) throws Exception {
-                return new Customer2(item.getName().toUpperCase(), item.getAge());
-            }
-        };
-    }
-
-
-    @Bean
-    public AsyncItemWriter<Customer2> customAsyncItemWriter() {
-        AsyncItemWriter<Customer2> asyncItemWriter = new AsyncItemWriter<>();
-        asyncItemWriter.setDelegate(customItemWriter()); // customItemWriter로 작업 위임
-        return asyncItemWriter;
-    }
-
-    @Bean
-    public ItemWriter<Customer2> customItemWriter() {
-        return new JdbcBatchItemWriterBuilder<Customer2>()
-                .dataSource(dataSource)
-                .sql("insert into customer2 values (:id, :age, :name)")
-                .beanMapped()
-                .build();
-
-    }
-
-}
-```
-
-
-
-Customer 데이터를 프로세서에서 Customer2객체로 전환하여 Writer로 전달하는 예시입니다.
-사실상 코드는 동기 코드와 큰 차이 없이 위임하는 과정만 추가되었다고 봐도 무방합니다.
-동기 Processor와 Writer을 만들고 비동기 Processor와 Writer를 만들어 그 안에서 위임하는 코드와 TaskExecutor 설정만 추가해주면 됩니다.
-
-
-
-### Multi-thread Step [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#multi-thread-step)
-
-------
-
-![그림5](https://backtony.github.io/assets/img/post/spring/batch/11/11-5.PNG)
-
-- Step 내에서 멀티 스레드로 Chunk 기반 처리가 이뤄지는 구조 입니다.
-- TaskExecutorRepeatTemplate이 반복자로 사용되며 설정한 개수(throttleLimit)만큼의 스레드를 생성하여 수행합니다.
-- ItemReader는 반드시 Thread-safe인지 확인해야 합니다.
-  - 데이터를 소스로 부터 읽어오는 역할이기 때문에 스레드마다 중복해서 데이터를 읽지 않도록 동기화가 보장되어야 합니다.
-  - 스프링 배치에서 제공하는 **JdbcPagingItemReader, JpaPagingItemReader가 Thread-safe** 하게 동작합니다.
-- 스레드끼리는 Chunk를 공유하지 않고 스레드마다 새로운 Chunk가 할당되어 데이터 동기화가 보장됩니다.
-
-### 예시 [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#예시-1)
-
-```
-@Configuration
-@RequiredArgsConstructor
-public class HelloJobConfiguration {
-    private final JobBuilderFactory jobBuilderFactory;
-    private final StepBuilderFactory stepBuilderFactory;
-    private final DataSource dataSource;
-    private final EntityManagerFactory entityManagerFactory;
-    private int chunkSize = 10;
-
-    @Bean
-    public Job helloJob() {
-        return jobBuilderFactory.get("job")
-                .start(step1())
-                .incrementer(new RunIdIncrementer())
-                .build();
-    }
-
-    @Bean
-    public Step step1() {
-        return stepBuilderFactory.get("step")
-                .<Customer, Customer2>chunk(chunkSize)
-                .reader(customItemReader())
-                .processor(customItemProcessor())
-                .writer(customItemWriter())
-                .taskExecutor(taskExecutor())
-                .build();
-    }
-
-    @Bean
-    public TaskExecutor taskExecutor() {
-        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
-        taskExecutor.setCorePoolSize(4); // 기본 스레드 풀 크기
-        taskExecutor.setMaxPoolSize(8); // 4개의 스레드가 이미 처리중인데 작업이 더 있을 경우 몇개까지 스레드를 늘릴 것인지
-        taskExecutor.setThreadNamePrefix("async-thread"); // 스레드 이름 prefix
-        return taskExecutor;
-    }
-
-    @Bean
-    public ItemReader<? extends Customer> customItemReader() {
-        return new JpaPagingItemReaderBuilder<Customer>()
-                .name("customItemReader")
-                .pageSize(chunkSize)
-                .entityManagerFactory(entityManagerFactory)
-                .queryString("select c from Customer c order by c.id")
-                .build();
-    }
-
-
-    @Bean
-    public ItemProcessor<Customer, Customer2> customItemProcessor() {
-        return new ItemProcessor<Customer, Customer2>() {
-            @Override
-            public Customer2 process(Customer item) throws Exception {
-                return new Customer2(item.getName().toUpperCase(), item.getAge());
-            }
-        };
-    }
-  
-
-    @Bean
-    public ItemWriter<Customer2> customItemWriter() {
-        return new JdbcBatchItemWriterBuilder<Customer2>()
-                .dataSource(dataSource)
-                .sql("insert into customer2 values (:id, :age, :name)")
-                .beanMapped()
-                .build();
-
-    }
-
-}
-```
-
-
-
-코드는 동기 코드에서 taskExecutor세팅만 추가해주면 됩니다.
-
-### Parallel Steps [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#parallel-steps)
-
-------
-
-![그림6](https://backtony.github.io/assets/img/post/spring/batch/11/11-6.PNG)
-
-- SplitState를 사용해서 여러 개의 Flow들을 병렬적으로 실행하는 구조 입니다.
-- 실행이 다 완료된 후 FlowExecutionStatus 결과들을 취합해서 다음 단계를 결정합니다.
-
-### API [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#api-1)
-
-![그림7](https://backtony.github.io/assets/img/post/spring/batch/11/11-7.PNG)
-
-1. flow 1 생성합니다.
-2. flow2와 flow3를 생성하고 앞선 1까지 총 3개의 flow를 합치고 taskExecutor에서는 flow 개수만큼 스레드를 생성해서 각 flow를 실행시킵니다.
-3. flow 4는 flow2와 flow3가 처리된 이후 실행됩니다.
-
-
-
-### Patitioning [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#patitioning)
-
-------
-
-- MasterStep이 SlaveStep을 실행시키는 구조입니다.
-- SlaveStep은 각 스레드에 의해 독립적으로 실행됩니다.
-- SlaveStep은 독립적인 StepExecution 파라미터 환경을 구성합니다.
-- SlaveStep은 ItemReader / ItemProcessor / ItemWriter 등을 갖고 동작하며 작업을 독립적으로 병렬 처리합니다.
-- MasterStep은 PartitionStep이며 SlaveStep은 TaskletStep, FlowStep 등이 올 수 있습니다.
-
-### 구조 [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#구조-1)
-
-![그림8](https://backtony.github.io/assets/img/post/spring/batch/11/11-8.PNG)
-MasterStep과 SlaveStep 둘다 Step인데 MasterStep에서 Partitioner가 grid Size만큼 StepExecution을 만들고 partitioner의 방식에 따라 StepExecution의 ExecutionContext 안에 **데이터 자체가 아닌 데이터 정보** 를 넣어둡니다.(예시를 보면 이해가 쉽습니다.)
-그리고 gridSize만큼 스레드를 생성하여 SlaveStep을 각 스레드별로 실행합니다.
-
-
-
-![그림9](https://backtony.github.io/assets/img/post/spring/batch/11/11-9.PNG)
-
-그림을 보면 알 수 있듯이, 각 스레드는 같은 SlaveStep을 실행하지만, 서로 다른 StepExecution 정보를 가지고 수행됩니다.
-Partitioning은 Scope를 지정하게 되는데 이에 따라 서로 같은 SlaveStep을 수행하게 되어 같은 프록시를 바라보지만 실제 실행할 때는 결과적으로 각 스레드마다 타겟 빈을 새로 만들기 때문에 서로 다른 타겟 빈을 바라보게 되어 동시성 이슈가 없습니다.
-
-### API [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#api-2)
-
-![그림10](https://backtony.github.io/assets/img/post/spring/batch/11/11-10.PNG)
-
-1. step 기본 설정
-2. slaveStep에 적용할 Partitioner 설정
-3. Slave역할을 하는 Step 설정
-4. 몇 개의 파티션으로 나눌 것인지 값 설정
-5. 스레드 풀 실행자 설정
-
-### 예시 [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#예시-2)
-
-```
-@Configuration
-@RequiredArgsConstructor
-public class HelloJobConfiguration {
-    private final JobBuilderFactory jobBuilderFactory;
-    private final StepBuilderFactory stepBuilderFactory;
-    private final DataSource dataSource;
-    private final EntityManagerFactory entityManagerFactory;
-    private int chunkSize = 10;
-    private int poolSize = 4 ;
-
-    @Bean
-    public Job helloJob() {
-        return jobBuilderFactory.get("job")
-                .start(masterStep())
-                .incrementer(new RunIdIncrementer())
-                .build();
-    }
-
-    @Bean
-    public Step masterStep() {
-        return stepBuilderFactory.get("masterStep") 
-                .partitioner(slaveStep().getName(),partitioner()) // slaveStep에서 사용될 partitioner 구현체 등록
-                .step(slaveStep()) // 파티셔닝 될 Step 등록(SlaveStep)
-                .gridSize(poolSize) // StepExecution이 형성될 개수 = 파티션 되는 데이터 뭉텅이 수 = 스레드 풀 사이즈과 일치시키는게 좋음
-                .taskExecutor(taskExecutor()) // MasterStep이 SlaveStep을 다루는 스레드 형성 방식
-                .build();
-    }
-
-    
-    @Bean
-    // 데이터 파티셔닝 방식
-    public Partitioner partitioner() {
-        ColumnRangePartitioner partitioner = new ColumnRangePartitioner(); // 아래 코드쪽 클래스 코드 참고
-        partitioner.setDataSource(dataSource);
-        partitioner.setTable("customer"); // 파티셔닝 할 테이블
-        partitioner.setColumn("id"); // 파티셔닝 기준 컬럼
-        return partitioner;
-    }
-
-    @Bean
-    public Step slaveStep() {
-        return stepBuilderFactory.get("slaveStep")
-                .<Customer,Customer2>chunk(chunkSize)
-                .reader(customItemReader(null,null))
-                .writer(customItemWriter())
-                .build();
-    }
-
-    @Bean
-    public TaskExecutor taskExecutor() {
-        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
-        taskExecutor.setCorePoolSize(poolSize); // 기본 스레드 풀 크기
-        taskExecutor.setMaxPoolSize(8); // 4개의 스레드가 이미 처리중인데 작업이 더 있을 경우 몇개까지 스레드를 늘릴 것인지
-        taskExecutor.setThreadNamePrefix("async-thread"); // 스레드 이름 prefix
-        return taskExecutor;
-    }
-
-    @Bean
-    @StepScope
-    // partitioner에서 stepExecutionContext에 데이터 정보를 넣어두기 때문에 런타임에 해당 과정이 발생
-    // 따라서 해당 값을 사용하기 위해서는 Scope를 사용해서 프록시를 통한 지연 로딩을 사용해야 함.
-    // 반환값은 ItemReader이 아닌 구현체를 사용해야 하는데 이는 아래서 설명
-    public JpaPagingItemReader<? extends Customer> customItemReader(
-            @Value("#{stepExecutionContext['minValue']}") Long minValue,
-           @Value("#{stepExecutionContext['maxValue']}") Long maxValue
-    ) {
-        Map<String,Object> parameters = new HashMap<>();
-        parameters.put("minValue",minValue);
-        parameters.put("maxValue",maxValue);
-
-        return new JpaPagingItemReaderBuilder<Customer>()
-                .name("customItemReader")
-                .entityManagerFactory(entityManagerFactory)
-                .pageSize(chunkSize)
-                .queryString("SELECT c FROM Customer c WHERE :minValue <= c.id and c.id <= :maxValue order by c.id")
-                .parameterValues(parameters)
-                .build();
-    }
-
-    @Bean
-    @StepScope
-    public JdbcBatchItemWriter<Customer2> customItemWriter() {
-        return new JdbcBatchItemWriterBuilder<Customer2>()
-                .dataSource(dataSource)
-                .sql("insert into customer2 values (:id, :age, :name)")
-                .beanMapped()
-                .build();
-    }
-}
-```
-
-
-
-```
-// Spring Batch 공식 샘플 코드
-// https://github.com/spring-projects/spring-batch/blob/main/spring-batch-samples/src/main/java/org/springframework/batch/sample/common/ColumnRangePartitioner.java
-public class ColumnRangePartitioner implements Partitioner {
-
-    private JdbcOperations jdbcTemplate;
-
-    private String table;
-
-    private String column;
-
-    public void setTable(String table) {
-        this.table = table;
-    }
-
-    public void setColumn(String column) {
-        this.column = column;
-    }
-
-    public void setDataSource(DataSource dataSource) {
-        jdbcTemplate = new JdbcTemplate(dataSource);
-    }
-
-
-    @Override
-    public Map<String, ExecutionContext> partition(int gridSize) {
-        int min = jdbcTemplate.queryForObject("SELECT MIN(" + column + ") from " + table, Integer.class);
-        int max = jdbcTemplate.queryForObject("SELECT MAX(" + column + ") from " + table, Integer.class);
-        int targetSize = (max - min) / gridSize + 1;
-
-        Map<String, ExecutionContext> result = new HashMap<>();
-        int number = 0;
-        int start = min;
-        int end = start + targetSize - 1;
-
-        while (start <= max) {
-            ExecutionContext value = new ExecutionContext();
-            result.put("partition" + number, value);
-
-            if (end >= max) {
-                end = max;
-            }
-            value.putInt("minValue", start);
-            value.putInt("maxValue", end);
-            start += targetSize;
-            end += targetSize;
-            number++;
-        }
-
-        return result;
-    }
-}
-```
-
-
-
-StepExecutionContext에 데이터 자체를 저장하는게 아니라 데이터 정보를 저장한다고 했을 때 이해가 어려웠을 것입니다.
-바로 위 코드의 ColumnRangePartitioner 클래스를 보면 테이블과 컬럼명을 받아서 gridSize로 쪼갠 뒤 쪼갠 값의 첫, 마지막 인덱스를 ExecutionContext에 저장하고 있습니다.
-위 코드를 기준으로 보자면, itemReader가 읽어야 하는 데이터가 100개가 있고 gridSize는 4입니다.
-partitioner에서는 Customer 테이블과 id컬럼을 받아서 itemReader가 읽어야할 데이터가 100개인 것을 확인하고 100을 4로 나눕니다.
-그럼 각 StepExecution은 25개씩 데이터를 처리해야 된다는 계산이 나오게 되어 각 ExecutionContext에 minValue와 MaxValue를 담습니다.(1,25), (26,50), (51,75) (76,100)
-그럼 itemReader에서는 각 StepExecution마다 해당 정보가 들어가 있으니 Scope를 사용한 지연로딩을 통해 값을 파라미터로 꺼내서 itemReader의 쿼리에 사용하는 방식입니다.
-뭔가 복잡해 보이지만 사실상 데이터베이스 파티셔닝과 거의 유사합니다.
-
-### 주의사항 [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#주의사항)
-
-```
-@Bean
-@StepScope
-public ItemReader<? extends Customer> customItemReader(
-        @Value("#{stepExecutionContext['minValue']}") Long minValue,
-        @Value("#{stepExecutionContext['maxValue']}") Long maxValue) {
-        ....
-
-        return new JpaPagingItemReaderBuilder<Customer>()
-                ....
-                .build();
-}
-```
-
-
-
-처음에 위와 같이 사용했다가 null 포인트 예외가 터져서 한참 찾았습니다.
-Scope가 아닐 경우에는 Jpa 구현체가 빈으로 등록되기 때문에 전혀 문제가 되지 않습니다.
-하지만 위 코드와 같이 Scope를 사용하면 구현체가 아니라 ItemReader 인터페이스의 프록시 객체가 빈을 등록되서 문제가 발생합니다.
-구현체의 경우 ItemReader와 ItemStream을 모두 구현하고 있기 때문에 문제가 없지만 ItemReader는 read 메서드만 있습니다.
-실제로 stream을 open/close하는 메서드는 ItemStream에 있습니다.
-즉, 위와 같이 사용하면 EntityManagerFactory에서 entityManager을 생성하는게 원래 Stream에서 진행되는 거라 itemReader인 프록시는 그런게 없기 때문에 null 포인트 예외가 발생하게 됩니다.
-이에 대한 해결책은 그냥 구현체를 반환하면 됩니다.
-
-```
-@Bean
-@StepScope
-public JpaPagingItemReader<? extends Customer> customItemReader(
-        @Value("#{stepExecutionContext['minValue']}") Long minValue,
-        @Value("#{stepExecutionContext['maxValue']}") Long maxValue) {
-        ....
-
-        return new JpaPagingItemReaderBuilder<Customer>()
-                ....
-                .build();
-}
-```
-
-
-
-더욱 자세한 내용은 [여기](https://jojoldu.tistory.com/132)를 참고하시면 좋을 것 같습니다.
-
-
-
-### SynchronizedItemStreamReader [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#synchronizeditemstreamreader)
-
-------
-
-![그림11](https://backtony.github.io/assets/img/post/spring/batch/11/11-11.PNG)
-Thread-safe 하지 않은 ItemReader를 Thread-safe하게 처리하도록 하는 기능을 제공합니다.
-단순히 Thread-safe하지 않은 ItemReader를 SynchronizedItemStreamReader로 한번 감싸주면 되기 때문에 적용 방식은 매우 간단합니다.
-
-### 예시 [Permalink](https://backtony.github.io/spring/2022-01-29-spring-batch-11/#예시-3)
-
-```
-@Configuration
-@RequiredArgsConstructor
-public class HelloJobConfiguration {
-    private final JobBuilderFactory jobBuilderFactory;
-    private final StepBuilderFactory stepBuilderFactory;
-    private final DataSource dataSource;
-    private int chunkSize = 10;
-
-    @Bean
-    public Job helloJob() {
-        return jobBuilderFactory.get("job")
-                .start(step())
-                .incrementer(new RunIdIncrementer())
-                .build();
-    }
-
-
-
-    @Bean
-    public Step step() {
-        return stepBuilderFactory.get("step")
-                .<Customer,Customer2>chunk(chunkSize)
-                .reader(customItemReader())
-                .writer(customItemWriter())
-                .taskExecutor(taskExecutor())
-                .build();
-    }
-    @Bean
-    public TaskExecutor taskExecutor() {
-        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
-        taskExecutor.setCorePoolSize(4); // 기본 스레드 풀 크기
-        taskExecutor.setMaxPoolSize(8); // 4개의 스레드가 이미 처리중인데 작업이 더 있을 경우 몇개까지 스레드를 늘릴 것인지
-        taskExecutor.setThreadNamePrefix("async-thread"); // 스레드 이름 prefix
-        return taskExecutor;
-    }
-
-    @Bean
-    public SynchronizedItemStreamReader<Customer> customItemReader() {
-        // thread-safe 하지 않은 Reader
-        JdbcCursorItemReader<Customer> notSafetyReader = new JdbcCursorItemReaderBuilder<Customer>()
-                .name("customItemReader")
-                .dataSource(dataSource)
-                .fetchSize(chunkSize)
-                .rowMapper(new BeanPropertyRowMapper<>(Customer.class))
-                .sql("select id, name, age from customer order by id")
-                .build();
-
-        // SyncStreamReader 만들고 인자로 thread-safe하지 않은 Reader를 넘기면 
-        // Read하는 작업이 동기화 되서 진행된다.
-        return new SynchronizedItemStreamReaderBuilder<Customer>()
-                .delegate(notSafetyReader)
-                .build();
-    }
-
-    @Bean
-    public JdbcBatchItemWriter<Customer2> customItemWriter() {
-        return new JdbcBatchItemWriterBuilder<Customer2>()
-                .dataSource(dataSource)
-                .sql("insert into customer2 values (:id, :age, :name)")
-                .beanMapped()
-                .build();
-    }
-
-}
-```
 
 
 
@@ -5350,7 +4766,619 @@ parameterName='{"value": "parameterValue", "type":"parameterType", "identifying"
 이 변경이 작업 매개변수 로드에 영향을 미치는 또 다른 경우는 실패한 작업 인스턴스를 다시 시작할 때입니다. 실패한 모든 v4 작업 인스턴스는 성공을 위해 다시 시작되거나 v5로의 마이그레이션이 완료되기 *전에* 중단될 것으로 예상됩니다 .
 
 
-https://europani.github.io/spring/2023/06/26/052-spring-batch-version5.html
+
+
+
+
+
+
+
+## *Multi-Thread 
+
+### 단일 스레드 vs 멀티 스레드
+
+------
+
+![그림1](https://backtony.github.io/assets/img/post/spring/batch/11/11-1.PNG)
+
+- 프로세스 내 특정 작업을 처리하는 스레드가 하나일 경우 단일 스레드, 여러 개일 경우 멀티 스레드라고 합니다.
+- 작업 처리에 있어서 단일 스레드와 멀티 스레드의 선택 기준은 어떤 방식이 자원을 효율적으로 사용하고 성능 처리에 유리한가 하는 점입니다.
+- 일반적으로 복잡한 처리나 대용량 데이터를 다루는 작업일 경우 전체 소요 시간 및 성능상의 이점을 가져오기 위해 멀티 스레드 방식을 사용합니다.
+- 멀티 스레드 처리 방식은 데이터 동기화 이슈가 존재하기 때문에 주의해야 합니다.
+
+
+
+### 스프링 배치 스레드 모델
+
+------
+
+- 스프링 배치는 기본적으로 단일 스레드 방식으로 작업을 처리합니다.
+- 성능 향상과 대규모 데이터 처리 작업을 위한 비동기 처리 및 Scale out 기능을 제공합니다.
+- Local과 Remote 처리를 지원합니다.
+- AsyncItemProcessor / AsyncItemWriter
+  - ItemProcessor에게 별도의 스레드가 할당되어 작업을 처리하는 방식
+- Multi-threaded Step
+  - Step 내 Chunk 구조인 ItemReader, ItemProcessor, ItemWriter 마다 여러 스레드가 할당되어 실행하는 방식
+- Remote Chunking
+  - 분산환경처럼 Step 처리가 여러 프로세스로 분할되어 외부의 다른 서버로 전송되어 처리하는 방식
+- Parallel Steps
+  - Step마다 스레드가 할당되어 여러 개의 Step을 병렬로 실행하는 방법
+- Partitioning
+  - Master/Slave 방식으로 Master가 데이터를 파티셔닝 한 다음 각 파티션에게 스레드를 할당하여 Slave가 독립적으로 작동하는 방식
+
+
+
+### AsyncItemProcessor / AsyncItemWriter
+
+------
+
+- Step 안에서 ItemProcessor가 비동기적으로 동작하는 구조입니다.
+- AsyncItemProcessor / AsyncItemWriter 둘이 함께 구성되어야 합니다.
+- AsyncItemProcessor로부터 AsyncItemWriter가 받는 최종 결과값은 List<Future<T>> 타입이며 비동기 실행이 완료될 때까지 대기합니다.
+- 사용하려면 Spring-batch-integration 의존성이 필요합니다.
+  - implementation ‘org.springframework.batch:spring-batch-integration’
+
+#### 구조
+
+![그림3](https://backtony.github.io/assets/img/post/spring/batch/11/11-3.PNG)
+![그림2](https://backtony.github.io/assets/img/post/spring/batch/11/11-2.PNG)
+
+AsyncItemProcessor는 ItemProcessor에 실제 작업을 위임합니다.
+TaskExecutor로 비동기 실행을 하기 위한 스레드를 만들고 해당 스레드는 FutureTask를 실행합니다.
+FutureTask는 Callable 인터페이스를 실행하면서 그 안에서 ItemProcessor가 작업을 처리하게 됩니다.(Callable은 Runnable과 같이 스레드의 작업을 정의하는데 반환값이 있는 것)
+이런 하나의 단위를 AsyncItemProcessor가 제공해서 처리를 위임하고 메인 스레드는 바로 다음 AsyncItemWriter로 넘어갑니다.
+AsyncItemWriter도 ItemWriter에게 작업을 위임합니다.
+ItemWriter는 Future 안에 있는 item들을 꺼내서 일괄처리하게 되는데 이때 Processor에서 작업 중인 비동기 실행의 결과값들을 모두 받아오기까지 대기합니다.
+
+#### API
+
+![그림4](https://backtony.github.io/assets/img/post/spring/batch/11/11-4.PNG)
+
+1. Step 기본 설정
+2. 청크 개수 설정
+3. ItemReader 설정(비동기 아님)
+4. 비동기 실행을 위한 AsyncItemProcessor 설정
+   - 스레드 풀 개수 만큼 스레드가 생성되어 비동기로 실행됩니다.
+   - 내부적으로 실제 ItemProcessor에게 실행을 위임하고 결과를 Future에 저장합니다.
+5. AsyncItemWriter 설정
+   - 비동기 실행 결과 값들을 모두 받오이기 까지 대기합니다.
+   - 내부적으로 실제 ItemWriter에게 최종 결과값을 넘겨주고 실행을 위임합니다.
+6. TaskletStep 생성
+
+#### 예시
+
+```
+implementation 'org.springframework.batch:spring-batch-integration'
+```
+
+
+
+의존성 추가가 필요합니다.
+
+```java
+@Configuration
+@RequiredArgsConstructor
+public class HelloJobConfiguration {
+    private final JobBuilderFactory jobBuilderFactory;
+    private final StepBuilderFactory stepBuilderFactory;
+    private final DataSource dataSource;
+    private final EntityManagerFactory entityManagerFactory;
+    private int chunkSize = 10;
+
+    @Bean
+    public Job helloJob() {
+        return jobBuilderFactory.get("job")
+                .start(step1())
+                .incrementer(new RunIdIncrementer())
+                .build();
+    }
+
+    @Bean
+    public Step step1() {
+        return stepBuilderFactory.get("step")
+                .<Customer, Future<Customer2>>chunk(chunkSize) // Future 타입
+                .reader(customItemReader())
+                .processor(customAsyncItemProcessor())
+                .writer(customAsyncItemWriter())
+                .build();
+    }
+
+    @Bean
+    public ItemReader<? extends Customer> customItemReader() {
+        return new JpaPagingItemReaderBuilder<Customer>()
+                .name("customItemReader")
+                .pageSize(chunkSize)
+                .entityManagerFactory(entityManagerFactory)
+                .queryString("select c from Customer c order by c.id")
+                .build();
+    }
+
+    @Bean
+    public AsyncItemProcessor<Customer, Customer2> customAsyncItemProcessor() {
+        AsyncItemProcessor<Customer, Customer2> asyncItemProcessor = new AsyncItemProcessor<>();
+        asyncItemProcessor.setDelegate(customItemProcessor()); // customItemProcessor 로 작업 위임
+        asyncItemProcessor.setTaskExecutor(new SimpleAsyncTaskExecutor()); // taskExecutor 세팅
+
+        return asyncItemProcessor;
+    }
+
+    @Bean
+    public ItemProcessor<Customer, Customer2> customItemProcessor() {
+        return new ItemProcessor<Customer, Customer2>() {
+            @Override
+            public Customer2 process(Customer item) throws Exception {
+                return new Customer2(item.getName().toUpperCase(), item.getAge());
+            }
+        };
+    }
+
+
+    @Bean
+    public AsyncItemWriter<Customer2> customAsyncItemWriter() {
+        AsyncItemWriter<Customer2> asyncItemWriter = new AsyncItemWriter<>();
+        asyncItemWriter.setDelegate(customItemWriter()); // customItemWriter로 작업 위임
+        return asyncItemWriter;
+    }
+
+    @Bean
+    public ItemWriter<Customer2> customItemWriter() {
+        return new JdbcBatchItemWriterBuilder<Customer2>()
+                .dataSource(dataSource)
+                .sql("insert into customer2 values (:id, :age, :name)")
+                .beanMapped()
+                .build();
+
+    }
+
+}
+```
+
+
+
+Customer 데이터를 프로세서에서 Customer2객체로 전환하여 Writer로 전달하는 예시입니다.
+사실상 코드는 동기 코드와 큰 차이 없이 위임하는 과정만 추가되었다고 봐도 무방합니다.
+동기 Processor와 Writer을 만들고 비동기 Processor와 Writer를 만들어 그 안에서 위임하는 코드와 TaskExecutor 설정만 추가해주면 됩니다.
+
+
+
+### Multi-thread Step
+
+------
+
+![그림5](https://backtony.github.io/assets/img/post/spring/batch/11/11-5.PNG)
+
+- Step 내에서 멀티 스레드로 Chunk 기반 처리가 이뤄지는 구조 입니다.
+- TaskExecutorRepeatTemplate이 반복자로 사용되며 설정한 개수(throttleLimit)만큼의 스레드를 생성하여 수행합니다.
+- ItemReader는 반드시 Thread-safe인지 확인해야 합니다.
+  - 데이터를 소스로 부터 읽어오는 역할이기 때문에 스레드마다 중복해서 데이터를 읽지 않도록 동기화가 보장되어야 합니다.
+  - 스프링 배치에서 제공하는 **JdbcPagingItemReader, JpaPagingItemReader가 Thread-safe** 하게 동작합니다.
+- 스레드끼리는 Chunk를 공유하지 않고 스레드마다 새로운 Chunk가 할당되어 데이터 동기화가 보장됩니다.
+
+#### 예시
+
+```java
+@Configuration
+@RequiredArgsConstructor
+public class HelloJobConfiguration {
+    private final JobBuilderFactory jobBuilderFactory;
+    private final StepBuilderFactory stepBuilderFactory;
+    private final DataSource dataSource;
+    private final EntityManagerFactory entityManagerFactory;
+    private int chunkSize = 10;
+
+    @Bean
+    public Job helloJob() {
+        return jobBuilderFactory.get("job")
+                .start(step1())
+                .incrementer(new RunIdIncrementer())
+                .build();
+    }
+
+    @Bean
+    public Step step1() {
+        return stepBuilderFactory.get("step")
+                .<Customer, Customer2>chunk(chunkSize)
+                .reader(customItemReader())
+                .processor(customItemProcessor())
+                .writer(customItemWriter())
+                .taskExecutor(taskExecutor())
+                .build();
+    }
+
+    @Bean
+    public TaskExecutor taskExecutor() {
+        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
+        taskExecutor.setCorePoolSize(4); // 기본 스레드 풀 크기
+        taskExecutor.setMaxPoolSize(8); // 4개의 스레드가 이미 처리중인데 작업이 더 있을 경우 몇개까지 스레드를 늘릴 것인지
+        taskExecutor.setThreadNamePrefix("async-thread"); // 스레드 이름 prefix
+        return taskExecutor;
+    }
+
+    @Bean
+    public ItemReader<? extends Customer> customItemReader() {
+        return new JpaPagingItemReaderBuilder<Customer>()
+                .name("customItemReader")
+                .pageSize(chunkSize)
+                .entityManagerFactory(entityManagerFactory)
+                .queryString("select c from Customer c order by c.id")
+                .build();
+    }
+
+
+    @Bean
+    public ItemProcessor<Customer, Customer2> customItemProcessor() {
+        return new ItemProcessor<Customer, Customer2>() {
+            @Override
+            public Customer2 process(Customer item) throws Exception {
+                return new Customer2(item.getName().toUpperCase(), item.getAge());
+            }
+        };
+    }
+  
+
+    @Bean
+    public ItemWriter<Customer2> customItemWriter() {
+        return new JdbcBatchItemWriterBuilder<Customer2>()
+                .dataSource(dataSource)
+                .sql("insert into customer2 values (:id, :age, :name)")
+                .beanMapped()
+                .build();
+
+    }
+
+}
+```
+
+
+
+코드는 동기 코드에서 taskExecutor세팅만 추가해주면 됩니다.
+
+### Parallel Steps
+
+------
+
+![그림6](https://backtony.github.io/assets/img/post/spring/batch/11/11-6.PNG)
+
+- SplitState를 사용해서 여러 개의 Flow들을 병렬적으로 실행하는 구조 입니다.
+- 실행이 다 완료된 후 FlowExecutionStatus 결과들을 취합해서 다음 단계를 결정합니다.
+
+#### API
+
+![그림7](https://backtony.github.io/assets/img/post/spring/batch/11/11-7.PNG)
+
+1. flow 1 생성합니다.
+2. flow2와 flow3를 생성하고 앞선 1까지 총 3개의 flow를 합치고 taskExecutor에서는 flow 개수만큼 스레드를 생성해서 각 flow를 실행시킵니다.
+3. flow 4는 flow2와 flow3가 처리된 이후 실행됩니다.
+
+
+
+### Patitioning
+
+------
+
+- MasterStep이 SlaveStep을 실행시키는 구조입니다.
+- SlaveStep은 각 스레드에 의해 독립적으로 실행됩니다.
+- SlaveStep은 독립적인 StepExecution 파라미터 환경을 구성합니다.
+- SlaveStep은 ItemReader / ItemProcessor / ItemWriter 등을 갖고 동작하며 작업을 독립적으로 병렬 처리합니다.
+- MasterStep은 PartitionStep이며 SlaveStep은 TaskletStep, FlowStep 등이 올 수 있습니다.
+
+#### 구조
+
+![그림8](https://backtony.github.io/assets/img/post/spring/batch/11/11-8.PNG)
+MasterStep과 SlaveStep 둘다 Step인데 MasterStep에서 Partitioner가 grid Size만큼 StepExecution을 만들고 partitioner의 방식에 따라 StepExecution의 ExecutionContext 안에 **데이터 자체가 아닌 데이터 정보** 를 넣어둡니다.(예시를 보면 이해가 쉽습니다.)
+그리고 gridSize만큼 스레드를 생성하여 SlaveStep을 각 스레드별로 실행합니다.
+
+
+
+![그림9](https://backtony.github.io/assets/img/post/spring/batch/11/11-9.PNG)
+
+그림을 보면 알 수 있듯이, 각 스레드는 같은 SlaveStep을 실행하지만, 서로 다른 StepExecution 정보를 가지고 수행됩니다.
+Partitioning은 Scope를 지정하게 되는데 이에 따라 서로 같은 SlaveStep을 수행하게 되어 같은 프록시를 바라보지만 실제 실행할 때는 결과적으로 각 스레드마다 타겟 빈을 새로 만들기 때문에 서로 다른 타겟 빈을 바라보게 되어 동시성 이슈가 없습니다.
+
+#### API
+
+![그림10](https://backtony.github.io/assets/img/post/spring/batch/11/11-10.PNG)
+
+1. step 기본 설정
+2. slaveStep에 적용할 Partitioner 설정
+3. Slave역할을 하는 Step 설정
+4. 몇 개의 파티션으로 나눌 것인지 값 설정
+5. 스레드 풀 실행자 설정
+
+#### 예시
+
+```
+@Configuration
+@RequiredArgsConstructor
+public class HelloJobConfiguration {
+    private final JobBuilderFactory jobBuilderFactory;
+    private final StepBuilderFactory stepBuilderFactory;
+    private final DataSource dataSource;
+    private final EntityManagerFactory entityManagerFactory;
+    private int chunkSize = 10;
+    private int poolSize = 4 ;
+
+    @Bean
+    public Job helloJob() {
+        return jobBuilderFactory.get("job")
+                .start(masterStep())
+                .incrementer(new RunIdIncrementer())
+                .build();
+    }
+
+    @Bean
+    public Step masterStep() {
+        return stepBuilderFactory.get("masterStep") 
+                .partitioner(slaveStep().getName(),partitioner()) // slaveStep에서 사용될 partitioner 구현체 등록
+                .step(slaveStep()) // 파티셔닝 될 Step 등록(SlaveStep)
+                .gridSize(poolSize) // StepExecution이 형성될 개수 = 파티션 되는 데이터 뭉텅이 수 = 스레드 풀 사이즈과 일치시키는게 좋음
+                .taskExecutor(taskExecutor()) // MasterStep이 SlaveStep을 다루는 스레드 형성 방식
+                .build();
+    }
+
+    
+    @Bean
+    // 데이터 파티셔닝 방식
+    public Partitioner partitioner() {
+        ColumnRangePartitioner partitioner = new ColumnRangePartitioner(); // 아래 코드쪽 클래스 코드 참고
+        partitioner.setDataSource(dataSource);
+        partitioner.setTable("customer"); // 파티셔닝 할 테이블
+        partitioner.setColumn("id"); // 파티셔닝 기준 컬럼
+        return partitioner;
+    }
+
+    @Bean
+    public Step slaveStep() {
+        return stepBuilderFactory.get("slaveStep")
+                .<Customer,Customer2>chunk(chunkSize)
+                .reader(customItemReader(null,null))
+                .writer(customItemWriter())
+                .build();
+    }
+
+    @Bean
+    public TaskExecutor taskExecutor() {
+        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
+        taskExecutor.setCorePoolSize(poolSize); // 기본 스레드 풀 크기
+        taskExecutor.setMaxPoolSize(8); // 4개의 스레드가 이미 처리중인데 작업이 더 있을 경우 몇개까지 스레드를 늘릴 것인지
+        taskExecutor.setThreadNamePrefix("async-thread"); // 스레드 이름 prefix
+        return taskExecutor;
+    }
+
+    @Bean
+    @StepScope
+    // partitioner에서 stepExecutionContext에 데이터 정보를 넣어두기 때문에 런타임에 해당 과정이 발생
+    // 따라서 해당 값을 사용하기 위해서는 Scope를 사용해서 프록시를 통한 지연 로딩을 사용해야 함.
+    // 반환값은 ItemReader이 아닌 구현체를 사용해야 하는데 이는 아래서 설명
+    public JpaPagingItemReader<? extends Customer> customItemReader(
+            @Value("#{stepExecutionContext['minValue']}") Long minValue,
+           @Value("#{stepExecutionContext['maxValue']}") Long maxValue
+    ) {
+        Map<String,Object> parameters = new HashMap<>();
+        parameters.put("minValue",minValue);
+        parameters.put("maxValue",maxValue);
+
+        return new JpaPagingItemReaderBuilder<Customer>()
+                .name("customItemReader")
+                .entityManagerFactory(entityManagerFactory)
+                .pageSize(chunkSize)
+                .queryString("SELECT c FROM Customer c WHERE :minValue <= c.id and c.id <= :maxValue order by c.id")
+                .parameterValues(parameters)
+                .build();
+    }
+
+    @Bean
+    @StepScope
+    public JdbcBatchItemWriter<Customer2> customItemWriter() {
+        return new JdbcBatchItemWriterBuilder<Customer2>()
+                .dataSource(dataSource)
+                .sql("insert into customer2 values (:id, :age, :name)")
+                .beanMapped()
+                .build();
+    }
+}
+```
+
+
+
+```
+// Spring Batch 공식 샘플 코드
+// https://github.com/spring-projects/spring-batch/blob/main/spring-batch-samples/src/main/java/org/springframework/batch/sample/common/ColumnRangePartitioner.java
+public class ColumnRangePartitioner implements Partitioner {
+
+    private JdbcOperations jdbcTemplate;
+
+    private String table;
+
+    private String column;
+
+    public void setTable(String table) {
+        this.table = table;
+    }
+
+    public void setColumn(String column) {
+        this.column = column;
+    }
+
+    public void setDataSource(DataSource dataSource) {
+        jdbcTemplate = new JdbcTemplate(dataSource);
+    }
+
+
+    @Override
+    public Map<String, ExecutionContext> partition(int gridSize) {
+        int min = jdbcTemplate.queryForObject("SELECT MIN(" + column + ") from " + table, Integer.class);
+        int max = jdbcTemplate.queryForObject("SELECT MAX(" + column + ") from " + table, Integer.class);
+        int targetSize = (max - min) / gridSize + 1;
+
+        Map<String, ExecutionContext> result = new HashMap<>();
+        int number = 0;
+        int start = min;
+        int end = start + targetSize - 1;
+
+        while (start <= max) {
+            ExecutionContext value = new ExecutionContext();
+            result.put("partition" + number, value);
+
+            if (end >= max) {
+                end = max;
+            }
+            value.putInt("minValue", start);
+            value.putInt("maxValue", end);
+            start += targetSize;
+            end += targetSize;
+            number++;
+        }
+
+        return result;
+    }
+}
+```
+
+
+
+StepExecutionContext에 데이터 자체를 저장하는게 아니라 데이터 정보를 저장한다고 했을 때 이해가 어려웠을 것입니다.
+바로 위 코드의 ColumnRangePartitioner 클래스를 보면 테이블과 컬럼명을 받아서 gridSize로 쪼갠 뒤 쪼갠 값의 첫, 마지막 인덱스를 ExecutionContext에 저장하고 있습니다.
+위 코드를 기준으로 보자면, itemReader가 읽어야 하는 데이터가 100개가 있고 gridSize는 4입니다.
+partitioner에서는 Customer 테이블과 id컬럼을 받아서 itemReader가 읽어야할 데이터가 100개인 것을 확인하고 100을 4로 나눕니다.
+그럼 각 StepExecution은 25개씩 데이터를 처리해야 된다는 계산이 나오게 되어 각 ExecutionContext에 minValue와 MaxValue를 담습니다.(1,25), (26,50), (51,75) (76,100)
+그럼 itemReader에서는 각 StepExecution마다 해당 정보가 들어가 있으니 Scope를 사용한 지연로딩을 통해 값을 파라미터로 꺼내서 itemReader의 쿼리에 사용하는 방식입니다.
+뭔가 복잡해 보이지만 사실상 데이터베이스 파티셔닝과 거의 유사합니다.
+
+#### 주의사항
+
+```
+@Bean
+@StepScope
+public ItemReader<? extends Customer> customItemReader(
+        @Value("#{stepExecutionContext['minValue']}") Long minValue,
+        @Value("#{stepExecutionContext['maxValue']}") Long maxValue) {
+        ....
+
+        return new JpaPagingItemReaderBuilder<Customer>()
+                ....
+                .build();
+}
+```
+
+
+
+처음에 위와 같이 사용했다가 null 포인트 예외가 터져서 한참 찾았습니다.
+Scope가 아닐 경우에는 Jpa 구현체가 빈으로 등록되기 때문에 전혀 문제가 되지 않습니다.
+하지만 위 코드와 같이 Scope를 사용하면 구현체가 아니라 ItemReader 인터페이스의 프록시 객체가 빈을 등록되서 문제가 발생합니다.
+구현체의 경우 ItemReader와 ItemStream을 모두 구현하고 있기 때문에 문제가 없지만 ItemReader는 read 메서드만 있습니다.
+실제로 stream을 open/close하는 메서드는 ItemStream에 있습니다.
+즉, 위와 같이 사용하면 EntityManagerFactory에서 entityManager을 생성하는게 원래 Stream에서 진행되는 거라 itemReader인 프록시는 그런게 없기 때문에 null 포인트 예외가 발생하게 됩니다.
+이에 대한 해결책은 그냥 구현체를 반환하면 됩니다.
+
+```
+@Bean
+@StepScope
+public JpaPagingItemReader<? extends Customer> customItemReader(
+        @Value("#{stepExecutionContext['minValue']}") Long minValue,
+        @Value("#{stepExecutionContext['maxValue']}") Long maxValue) {
+        ....
+
+        return new JpaPagingItemReaderBuilder<Customer>()
+                ....
+                .build();
+}
+```
+
+
+
+더욱 자세한 내용은 [여기](https://jojoldu.tistory.com/132)를 참고하시면 좋을 것 같습니다.
+
+
+
+### SynchronizedItemStreamReader
+
+------
+
+![그림11](https://backtony.github.io/assets/img/post/spring/batch/11/11-11.PNG)
+Thread-safe 하지 않은 ItemReader를 Thread-safe하게 처리하도록 하는 기능을 제공합니다.
+단순히 Thread-safe하지 않은 ItemReader를 SynchronizedItemStreamReader로 한번 감싸주면 되기 때문에 적용 방식은 매우 간단합니다.
+
+#### 예시
+
+```
+@Configuration
+@RequiredArgsConstructor
+public class HelloJobConfiguration {
+    private final JobBuilderFactory jobBuilderFactory;
+    private final StepBuilderFactory stepBuilderFactory;
+    private final DataSource dataSource;
+    private int chunkSize = 10;
+
+    @Bean
+    public Job helloJob() {
+        return jobBuilderFactory.get("job")
+                .start(step())
+                .incrementer(new RunIdIncrementer())
+                .build();
+    }
+
+
+
+    @Bean
+    public Step step() {
+        return stepBuilderFactory.get("step")
+                .<Customer,Customer2>chunk(chunkSize)
+                .reader(customItemReader())
+                .writer(customItemWriter())
+                .taskExecutor(taskExecutor())
+                .build();
+    }
+    @Bean
+    public TaskExecutor taskExecutor() {
+        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
+        taskExecutor.setCorePoolSize(4); // 기본 스레드 풀 크기
+        taskExecutor.setMaxPoolSize(8); // 4개의 스레드가 이미 처리중인데 작업이 더 있을 경우 몇개까지 스레드를 늘릴 것인지
+        taskExecutor.setThreadNamePrefix("async-thread"); // 스레드 이름 prefix
+        return taskExecutor;
+    }
+
+    @Bean
+    public SynchronizedItemStreamReader<Customer> customItemReader() {
+        // thread-safe 하지 않은 Reader
+        JdbcCursorItemReader<Customer> notSafetyReader = new JdbcCursorItemReaderBuilder<Customer>()
+                .name("customItemReader")
+                .dataSource(dataSource)
+                .fetchSize(chunkSize)
+                .rowMapper(new BeanPropertyRowMapper<>(Customer.class))
+                .sql("select id, name, age from customer order by id")
+                .build();
+
+        // SyncStreamReader 만들고 인자로 thread-safe하지 않은 Reader를 넘기면 
+        // Read하는 작업이 동기화 되서 진행된다.
+        return new SynchronizedItemStreamReaderBuilder<Customer>()
+                .delegate(notSafetyReader)
+                .build();
+    }
+
+    @Bean
+    public JdbcBatchItemWriter<Customer2> customItemWriter() {
+        return new JdbcBatchItemWriterBuilder<Customer2>()
+                .dataSource(dataSource)
+                .sql("insert into customer2 values (:id, :age, :name)")
+                .beanMapped()
+                .build();
+    }
+
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
 
 참조
 
@@ -5367,9 +5395,8 @@ https://docs.spring.io/spring-batch/docs/current/reference/html/index.html
 https://godekdls.github.io/Spring%20Batch/contents/
 https://backtony.github.io/spring
 https://alwayspr.tistory.com/49
-
-
-scdf https://velog.io/@mnetna/Spring-Data-Flow-using-Kubernetes-%EC%84%A4%EC%B9%98%EC%99%80-Remote-Partition-%EC%A0%81%EC%9A%A9
+https://europani.github.io/spring/2023/06/26/052-spring-batch-version5.html
+https://velog.io/@mnetna/Spring-Data-Flow-using-Kubernetes-%EC%84%A4%EC%B9%98%EC%99%80-Remote-Partition-%EC%A0%81%EC%9A%A9
 ```
 
 

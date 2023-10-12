@@ -1,4 +1,4 @@
-package com.example.batch_01.sample01.tasklet;
+package com.example.batch_01.sample00.tasklet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
