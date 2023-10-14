@@ -1,23 +1,24 @@
 package com.example.batch_01.sample11;
 
-public class CustomItemWriterListener implements ItemWriteListener<Customer2> {
+import com.example.batch_01.sample00.model.User;
+import org.springframework.batch.core.ItemWriteListener;
+
+import java.util.List;
+
+public class CustomItemWriterListener implements ItemWriteListener<User> {
     private int count;
 
-
-    @Override
-    public void beforeWrite(List<? extends Customer2> items) {
+    public void beforeWrite(List<? extends User> items) {
         count++;
         System.out.println("before writer : "+ count);
     }
 
-    @Override
-    public void afterWrite(List<? extends Customer2> items) {
+    public void afterWrite(List<? extends User> items) {
         System.out.println("after writer : "+ count);
 
     }
 
-    @Override
-    public void onWriteError(Exception exception, List<? extends Customer2> items) {
+    public void onWriteError(Exception exception, List<? extends User> items) {
         System.out.println("error writer : "+ count);
 
     }

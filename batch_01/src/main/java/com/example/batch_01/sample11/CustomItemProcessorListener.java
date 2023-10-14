@@ -1,22 +1,25 @@
 package com.example.batch_01.sample11;
 
-public class CustomItemProcessorListener implements ItemProcessListener<Customer, Customer2> {
+import com.example.batch_01.sample00.model.User;
+import org.springframework.batch.core.ItemProcessListener;
+
+public class CustomItemProcessorListener implements ItemProcessListener<User, User> {
     private int count;
 
     @Override
-    public void beforeProcess(Customer item) {
+    public void beforeProcess(User item) {
         count++;
         System.out.println("before processor : "+ count);
     }
 
     @Override
-    public void afterProcess(Customer item, Customer2 result) {
+    public void afterProcess(User item, User result) {
         System.out.println("after processor : "+ count);
 
     }
 
     @Override
-    public void onProcessError(Customer item, Exception e) {
+    public void onProcessError(User item, Exception e) {
         System.out.println("error processor : "+ count);
 
     }

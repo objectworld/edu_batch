@@ -1,5 +1,7 @@
 package com.example.batch_01.sample11;
 
+import org.springframework.batch.core.ItemReadListener;
+
 public class CustomItemReadListener implements ItemReadListener {
     private int count;
 
