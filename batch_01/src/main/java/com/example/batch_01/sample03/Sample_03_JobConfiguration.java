@@ -17,7 +17,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
 @RequiredArgsConstructor
-public class HelloJobConfiguration {
+public class Sample_03_JobConfiguration {
 
     @Bean
     public Job helloJob(JobRepository jobRepository, Step jobStep, Step scopeStep02) {
@@ -33,7 +33,7 @@ public class HelloJobConfiguration {
                 .job(childJob(jobRepository,step1(jobRepository,transactionManager)))
                 .launcher(jobLauncher)
                 .parametersExtractor(jobParametersExtractor())
-                // 리스터를 통해서 Step이 시작하기 전에 Step의 ExecutionContext에 name과 backtony 키밸류값 등록
+                // 리스너를 통해서 Step이 시작하기 전에 Step의 ExecutionContext에 name과 backtony 키밸류값 등록
                 .listener(new StepExecutionListener() {
                     @Override
                     public void beforeStep(StepExecution stepExecution) {

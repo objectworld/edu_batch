@@ -2265,33 +2265,112 @@ next는 Step, Flow, JobExecutionDecider 타입을 받을 수 있습니다.
 #### 2.6.1.8 Sample_04
 
 ```java
+package com.example.batch_01.sample04;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.batch.core.ExitStatus;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.Step;
+import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.transaction.PlatformTransactionManager;
+
 @Configuration
 @RequiredArgsConstructor
-public class HelloJobConfiguration {
-
-    private final JobBuilderFactory jobBuilderFactory;
-    private final StepBuilderFactory stepBuilderFactory;
-
+public class Sample_04_JobConfiguration {
+    
     @Bean
-    public Job helloJob() {
-        return jobBuilderFactory.get("job")
-                .start(step1())
-                    .on("COMPLETED")
-                    .to(step2())
-                    .on("FAILED")
-                    .to(step3())
-                .from(step1())
-                    .on("FAILED")
-                    .end()
-                .from(step2())
-                    .on("COMPLETED")
-                    .to(step4())
-                    .next(step5())                    
+    public Job sample04_01(JobRepository jobRepository, Step jobStep, Step scopeStep02,PlatformTransactionManager transactionManager) {
+        return new JobBuilder("sample04_01", jobRepository)
+                .start(sample04_step1(jobRepository,transactionManager))
+                .on("FAILED")
+                .to(sample04_step2(jobRepository,transactionManager))
+                .on("PASS")
+                .stop()
                 .end() // SimpleFlow 객체 생성
                 .incrementer(new RunIdIncrementer())
                 .build();
     }
-    ...
+
+    @Bean
+    public Job sample04_02(JobRepository jobRepository, Step jobStep, Step scopeStep02,PlatformTransactionManager transactionManager) {
+        return new JobBuilder("sample04_02", jobRepository)
+                .start(sample04_step1(jobRepository,transactionManager))
+                    .on("COMPLETED")
+                    .to(sample04_step2(jobRepository,transactionManager))
+                    .on("FAILED")
+                    .to(sample04_step3(jobRepository,transactionManager))
+                .from(sample04_step1(jobRepository,transactionManager))
+                    .on("FAILED")
+                    .end()
+                .from(sample04_step2(jobRepository,transactionManager))
+                    .on("COMPLETED")
+                    .to(sample04_step4(jobRepository,transactionManager))
+                    .next(sample04_step5(jobRepository,transactionManager))
+                .end() // SimpleFlow 객체 생성
+                .incrementer(new RunIdIncrementer())
+                .build();
+    }
+    @Bean
+    public Step sample04_step1(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+        return new StepBuilder("sample04_step1",jobRepository)
+                .tasklet((stepContribution, chunkContext) -> {
+                    System.out.println("step1 completed");
+                    stepContribution.setExitStatus(ExitStatus.COMPLETED);
+                    return RepeatStatus.FINISHED;
+                },transactionManager)
+                .build();
+    }
+
+    @Bean
+    public Step sample04_step2(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+        return new StepBuilder("sample04_step2",jobRepository)
+                .tasklet((stepContribution, chunkContext) -> {
+                    System.out.println("sample04_step2 completed");
+                    stepContribution.setExitStatus(ExitStatus.FAILED);
+                    return RepeatStatus.FINISHED;
+                },transactionManager)
+                .listener(new PassCheckListener()) // 리스너 추가
+                .build();
+    }
+
+    @Bean
+    public Step sample04_step3(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+        return new StepBuilder("sample04_step3",jobRepository)
+                .tasklet((stepContribution, chunkContext) -> {
+                    System.out.println("sample04_step3 completed");
+                    return RepeatStatus.FINISHED;
+                },transactionManager)
+                .listener(new PassCheckListener()) // 리스너 추가
+                .build();
+    }
+
+    @Bean
+    public Step sample04_step4(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+        return new StepBuilder("sample04_step4",jobRepository)
+                .tasklet((stepContribution, chunkContext) -> {
+                    System.out.println("sample04_step4 completed");
+                    return RepeatStatus.FINISHED;
+                },transactionManager)
+                .listener(new PassCheckListener()) // 리스너 추가
+                .build();
+    }
+
+    @Bean
+    public Step sample04_step5(JobRepository jobRepository, PlatformTransactionManager transactionManager) {
+        return new StepBuilder("sample04_step5",jobRepository)
+                .tasklet((stepContribution, chunkContext) -> {
+                    System.out.println("sample04_step5 completed");
+                    return RepeatStatus.FINISHED;
+                },transactionManager)
+                .listener(new PassCheckListener()) // 리스너 추가
+                .build();
+    }
 }
 ```
 
@@ -2389,7 +2468,7 @@ private void addDanglingEndStates() {
 
 이제 예시를 보겠습니다.
 
-```
+```java
 @Configuration
 @RequiredArgsConstructor
 public class HelloJobConfiguration {
@@ -2424,7 +2503,7 @@ step2에는 성공, 실패에 대한 모든 정의가 되어있지 않기 때문
 간단하게 Step이 종료된 이후에 StepExecution의 ExitStatus를 PASS로 조작하는 리스너를 하나 만들어서 step2에 붙였습니다.
 사실 리스너를 붙여서 조작하는 방식보다는 바로 다음에 설명하는 JobExecutionDecider를 사용하는게 더 좋습니다.
 
-```
+```java
 public class PassCheckListener implements StepExecutionListener {
     @Override
     public void beforeStep(StepExecution stepExecution) { }
@@ -2499,7 +2578,9 @@ JobExecutionDecider는 **Transition 처리를 위한 전용 클래스** 로 Exit
 **예시**
 간단하게 짝홀 decider를 만들어보고 그에 따른 흐름에 맞게 동작하는 Job을 만들겠습니다.
 
-```
+#### 2.6.1.11 Sample_05
+
+```java
 @Configuration
 @RequiredArgsConstructor
 public class HelloJobConfiguration {
@@ -2578,7 +2659,7 @@ public class CustomDecider implements JobExecutionDecider {
 
 
 
-#### 2.6.1.11 FlowJob 아키텍처
+#### 2.6.1.12 FlowJob 아키텍처
 
 ------
 
@@ -2645,21 +2726,36 @@ resume()메서드에서는 다음 State를 선택하기 위해서 nextState()를
 만약 다음 State가 FlowState일 경우, 그 안에 Flow가 존재하므로 다시 반복하게 됩니다.
 이런 구조로 SimpleFlow가 동작하게 됩니다.
 
-#### 2.6.2.4 Sample_05
+#### 2.6.2.4 Sample_06
 
-```
+```java
+package com.example.batch_01.sample06;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.Step;
+import org.springframework.batch.core.job.builder.FlowBuilder;
+import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.job.flow.Flow;
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.transaction.PlatformTransactionManager;
+
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
-public class HelloJobConfiguration {
+public class Sample_06JobConfiguration {
 
-    private final JobBuilderFactory jobBuilderFactory;
-    private final StepBuilderFactory stepBuilderFactory;
-
-
+    private final PlatformTransactionManager transactionManager;
+    private final JobRepository jobRepository;
+    
     @Bean
-    public Job helloJob() {
-        return jobBuilderFactory.get("job")
+    public Job sample06() {
+        return new JobBuilder("sample06", jobRepository)
                 .start(flow1()) // SimpleFlow
                     .on("COMPLETED")
                     .to(flow2()) // SimpleFlow
@@ -2670,7 +2766,7 @@ public class HelloJobConfiguration {
     @Bean
     public Flow flow1() {
         FlowBuilder<Flow> builder = new FlowBuilder<>("flow1");
-        builder.start(step1())
+        builder.start(sample06_step1())
                 .end();
         return builder.build();
     }
@@ -2678,29 +2774,29 @@ public class HelloJobConfiguration {
     @Bean
     public Flow flow2() {
         FlowBuilder<Flow> builder = new FlowBuilder<>("flow2");
-        builder.start(step2())
+        builder.start(sample06_step2())
                 .end();
         return builder.build();
     }
 
 
     @Bean
-    public Step step1() {
-        return stepBuilderFactory.get("step1")
+    public Step sample06_step1() {
+        return new StepBuilder("sample06_step1",jobRepository)
                 .tasklet((stepContribution, chunkContext) -> {
-                    System.out.println("step1 completed");
+                    System.out.println("sample06_step1 completed");
                     return RepeatStatus.FINISHED;
-                })
+                },transactionManager)
                 .build();
     }
 
     @Bean
-    public Step step2() {
-        return stepBuilderFactory.get("step2")
+    public Step sample06_step2() {
+        return new StepBuilder("sample06_step2",jobRepository)
                 .tasklet((stepContribution, chunkContext) -> {
-                    System.out.println("step2 completed");
+                    System.out.println("sample06_step2 completed");
                     return RepeatStatus.FINISHED;
-                })
+                },transactionManager)
                 .build();
     }
 }
@@ -2708,12 +2804,12 @@ public class HelloJobConfiguration {
 
 
 
-#### 2.6.2.5 Sample_06
+#### 2.6.2.5 Sample_07
 
-```
+```java
 @Configuration
 @RequiredArgsConstructor
-public class HelloJobConfiguration {
+public class Sample_07JobConfiguration {
 
     private final JobBuilderFactory jobBuilderFactory;
     private final StepBuilderFactory stepBuilderFactory;
@@ -2796,60 +2892,75 @@ Job의 BatchStatus는 최종 흐름의 성공 여부에 따라 값이 반영됩�
 - JobStep이 Step 안에서 Job을 할당하는 것 처럼 Step 내에서 Flow를 할당하는 객체입니다.
 - flowStep도 Step이기 때문에 BatchStatus와 ExitStatus가 존재하는데, 품고 있는 Flow의 FlowExecutionStatus값을 통해 업데이트 됩니다.
 
-#### 예시
+#### Sample08
 
-```
+```java
+package com.example.batch_01.sample08;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.Step;
+import org.springframework.batch.core.job.builder.FlowBuilder;
+import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.job.flow.Flow;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.transaction.PlatformTransactionManager;
+
 @Configuration
 @RequiredArgsConstructor
-public class HelloJobConfiguration {
+public class Sample08JobConfiguration {
 
-    private final JobBuilderFactory jobBuilderFactory;
-    private final StepBuilderFactory stepBuilderFactory;
-
+    private final PlatformTransactionManager transactionManager;
+    private final JobRepository jobRepository;
 
     @Bean
-    public Job helloJob() {
-        return jobBuilderFactory.get("job")
-                .start(flowStep())
-                .next(step2())
+    public Job sample08() {
+        return new JobBuilder("sample08", jobRepository)
+                .start(sample_08_flowStep01())
+                .next(sample_08_step02())
                 .incrementer(new RunIdIncrementer())
                 .build();
     }
 
     // 스텝이지만 flow를 요소로 갖고 있는 flowStep
     @Bean
-    public Step flowStep() {
-        return stepBuilderFactory.get("flowStep")
+    public Step sample_08_flowStep01() {
+        return new StepBuilder("sample_08_flowStep01",jobRepository)
                 .flow(flow())
                 .build();
     }
 
     @Bean
     public Flow flow() {
-        FlowBuilder<Flow> builder = new FlowBuilder<>("flow");
-        builder.start(step1())
+        FlowBuilder<Flow> builder = new FlowBuilder<>("sample_08_flow01");
+        builder.start(sample_08_step01())
                 .end();
         return builder.build();
     }
 
 
     @Bean
-    public Step step1() {
-        return stepBuilderFactory.get("step1")
+    public Step sample_08_step01() {
+        return new StepBuilder("sample_08_step01",jobRepository)
                 .tasklet((stepContribution, chunkContext) -> {
-                    System.out.println("step1 completed");
+                    System.out.println("sample_08_step1 completed");
                     return RepeatStatus.FINISHED;
-                })
+                },transactionManager)
                 .build();
     }
 
     @Bean
-    public Step step2() {
-        return stepBuilderFactory.get("step2")
+    public Step sample_08_step02() {
+        return new StepBuilder("sample_08_step02",jobRepository)
                 .tasklet((stepContribution, chunkContext) -> {
-                    System.out.println("step2 completed");
+                    System.out.println("sample_08_step02 completed");
                     return RepeatStatus.FINISHED;
-                })
+                },transactionManager)
                 .build();
     }
 }
@@ -2893,9 +3004,9 @@ Scope는 스프링 컨테이너에서 빈이 관리되는 범위를 의미합니
 - Tasklet이나 ItemReader, ItemWriter, ItemProcessor 선언문에 붙입니다.
 - @Value로 JobParameter, JobExecutionContext, StepExecutionContet 사용 가능합니다.
 
-#### Sample_07
+#### Sample_09
 
-```
+```java
 @Configuration
 @RequiredArgsConstructor
 public class Test2Config {
@@ -3089,53 +3200,60 @@ public interface JobExecutionListener {
 
 listener를 등록하는 방식은 인터페이스를 구현하거나 애노테이션을 사용하는 방식이 있습니다.
 
-### **2.7.2 Example_인터페이스 구현 방식**
+### **2.7.2 Sample_10(인터페이스 구현 방식)**
 
 ```java
+package com.example.batch_01.sample10;
+
+import com.example.batch_01.sample09.CustomStepListener;
+import lombok.RequiredArgsConstructor;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.Step;
+import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.transaction.PlatformTransactionManager;
+
 @Configuration
 @RequiredArgsConstructor
-public class HelloJobConfiguration {
-    private final JobBuilderFactory jobBuilderFactory;
-    private final StepBuilderFactory stepBuilderFactory;
-    private final EntityManagerFactory entityManagerFactory;
-    private int chunkSize = 10;
+public class Sample_10_JobConfiguration {
+    private final PlatformTransactionManager transactionManager;
+    private final JobRepository jobRepository;
 
     @Bean
-    public Job helloJob() {
-        return jobBuilderFactory.get("job")
+    public Job sample10() {
+        return new JobBuilder("sample10", jobRepository)
                 .incrementer(new RunIdIncrementer())
-                .start(step())
+                .start(sample10_step01())
                 .listener(new CustomJobExecutionListener())
                 //.listener(new CustomJobAnnotationExecutionListener()) // 애노테이션 방식
                 .build();
     }
-
-
     @Bean
-    public Step step() {
-        return stepBuilderFactory.get("step")
-                .<Customer, Customer2>chunk(chunkSize)
-                .reader(customItemReader())
-                .writer(items -> System.out.println("items = " + items))
-                .listener(new CustomStepExecutionListener())
+    public Step sample10_step01() {
+        return new StepBuilder("sample10_step01",jobRepository)
+                .tasklet((stepContribution, chunkContext) -> {
+                    System.out.println("sample10_step01 completed");
+                    return RepeatStatus.FINISHED;
+                },transactionManager)
+                .listener(new CustomStepListener())
+                //.listener(new CustomStepAnnotationExecutionListener())
                 .build();
     }
-
-
-    @Bean
-    public JpaPagingItemReader<Customer> customItemReader() {
-        return new JpaPagingItemReaderBuilder<Customer>()
-                .name("customItemReader")
-                .pageSize(chunkSize)
-                .entityManagerFactory(entityManagerFactory)
-                .queryString("select c from Customer c order by c.id")
-                .build();
-
-    }
-
-
 }
 ----------------------------------------------------------------
+package com.example.batch_01.sample10;
+
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.JobExecutionListener;
+
+import java.time.ZoneId;
+import java.util.concurrent.TimeUnit;
+
 public class CustomJobExecutionListener implements JobExecutionListener {
     @Override
     public void beforeJob(JobExecution jobExecution) {
@@ -3145,14 +3263,19 @@ public class CustomJobExecutionListener implements JobExecutionListener {
     @Override
     public void afterJob(JobExecution jobExecution) {
         String jobName = jobExecution.getJobInstance().getJobName();
-        long startTime = jobExecution.getStartTime().getTime();
-        long endTime = jobExecution.getEndTime().getTime();
-        long executionTime = endTime - startTime;
-        System.out.println("job name : " + jobName  + " end "+ " execution time : "+executionTime);
-
+        long startTime = jobExecution.getStartTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        long endTime = jobExecution.getEndTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        long executionTime = TimeUnit.MILLISECONDS.toMinutes(endTime - startTime);
+        System.out.println("job name : " + jobName  + " end : "+ " execution time : "+executionTime+"s");
     }
 }
 ----------------------------------------------------------------
+package com.example.batch_01.sample10;
+
+import org.springframework.batch.core.ExitStatus;
+import org.springframework.batch.core.StepExecution;
+import org.springframework.batch.core.StepExecutionListener;
+
 public class CustomStepExecutionListener implements StepExecutionListener {
     @Override
     public void beforeStep(StepExecution stepExecution) {
@@ -3178,9 +3301,18 @@ public class CustomStepExecutionListener implements StepExecutionListener {
 StepListener의 반환값으로 ExitStatus를 수정해서 Job의 ExitStatus에 반영되는 값을 수정할 수 있습니다.
 위 코드에서는 리스너를 new로 생성해서 등록했지만 빈으로 등록해서 DI받아서 등록해도 됩니다.
 
-### 2.7.3 Example_Annotation 방식
+### 2.7.3  Sample_10(Annotation 방식)
 
 ```java
+package com.example.batch_01.sample10;
+
+import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.annotation.AfterJob;
+import org.springframework.batch.core.annotation.BeforeJob;
+
+import java.time.ZoneId;
+import java.util.concurrent.TimeUnit;
+
 public class CustomJobAnnotationExecutionListener {
 
     @BeforeJob
@@ -3191,10 +3323,43 @@ public class CustomJobAnnotationExecutionListener {
     @AfterJob
     public void afterJob(JobExecution jobExecution) {
         String jobName = jobExecution.getJobInstance().getJobName();
-        long startTime = jobExecution.getStartTime().getTime();
-        long endTime = jobExecution.getEndTime().getTime();
-        long executionTime = endTime - startTime;
-        System.out.println("job name : " + jobName  + " end : "+ " execution time : "+executionTime);
+        long startTime = jobExecution.getStartTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        long endTime = jobExecution.getEndTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+
+        long executionTime = TimeUnit.MILLISECONDS.toMinutes(endTime - startTime);
+
+        System.out.println("job name : " + jobName  + " end : "+ " execution time : "+executionTime+"s");
+
+    }
+}
+
+
+---
+    package com.example.batch_01.sample10;
+
+import org.springframework.batch.core.StepExecution;
+import org.springframework.batch.core.annotation.AfterStep;
+import org.springframework.batch.core.annotation.BeforeStep;
+
+import java.time.ZoneId;
+import java.util.concurrent.TimeUnit;
+
+public class CustomStepAnnotationExecutionListener {
+
+    @BeforeStep
+    public void beforeStep(StepExecution stepExecution) {
+        System.out.println("step name : " + stepExecution.getStepName() + " start");
+    }
+
+    @AfterStep
+    public void afterStep(StepExecution stepExecution) {
+        String stepName = stepExecution.getStepName();
+        long startTime = stepExecution.getStartTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        long endTime = stepExecution.getEndTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+
+        long executionTime = TimeUnit.MILLISECONDS.toMinutes(endTime - startTime);
+
+        System.out.println("step name : " + stepName  + " end : "+ " execution time : "+executionTime+"s");
 
     }
 }
@@ -3219,12 +3384,12 @@ public class CustomJobAnnotationExecutionListener {
 
 네 가지 리스너 모두 애노테이션 방식을 지원합니다.
 
-### 2.7.4 Sample_08
+### 2.7.4 Sample_11
 
 ```java
 @Configuration
 @RequiredArgsConstructor
-public class HelloJobConfiguration {
+public class sample_11_JobConfiguration {
     private final JobBuilderFactory jobBuilderFactory;
     private final StepBuilderFactory stepBuilderFactory;
     private final EntityManagerFactory entityManagerFactory;
@@ -3375,9 +3540,7 @@ public class CustomItemWriterListener implements ItemWriteListener<Customer2> {
 
 
 
-## 2.8 Skip & Retry & Tolerant
-
-### Repeat [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#repeat)
+## 2.8 Repeat
 
 ------
 
@@ -3385,7 +3548,7 @@ public class CustomItemWriterListener implements ItemWriteListener<Customer2> {
 - 스프링 배치에서는 Step과 Chunk의 반복을 RepeatOperation을 사용해 처리하고 있습니다.
 - 기본 구현체로 RepeatTemplate을 제공합니다.
 
-### 구조 [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#구조)
+### 구조
 
 ![그림1](https://backtony.github.io/assets/img/post/spring/batch/10/10-1.PNG)
 
@@ -3393,11 +3556,11 @@ Step은 RepeatTemplate을 사용해 Tasklet을 반복적으로 실행합니다.
 ChunkOrientedTasklet은 내부적으로 ChunkProvider를 통해 ItemReader로 데이터를 읽어올 것을 지시합니다.
 ChunkProvider는 내부적으로 RepeatTemplate을 갖고 있고 이를 이용해 반복적으로 ItemReader에게 반복적으로 데이터를 읽어오도록 처리합니다.
 
-### 반복 결정 여부 항목 [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#반복-결정-여부-항목)
+### 반복 결정 여부 항목
 
 ![그림2](https://backtony.github.io/assets/img/post/spring/batch/10/10-2.PNG)
 
-#### ExceptionHanlder [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#exceptionhanlder)
+#### ExceptionHanlder
 
 - RepeatCallback 안에서 예외가 발생하면 RepeatTemplate가 ExceptionHanlder를 참조해서 예외를 던질지, 말지를 결정합니다.
 - 예외를 받아서 예외를 던지게 되면 반복이 종료되고 비정상 종료 처리됩니다.
@@ -3407,7 +3570,7 @@ ChunkProvider는 내부적으로 RepeatTemplate을 갖고 있고 이를 이용�
   - LogOrRethrowExceptionHandler : 예외를 로그로 기록할지 아니면 예외를 던질 것인지 결정합니다.
   - RethrowOnThresholdExecptionHandler : 지정된 유형의 예외가 임계 값에 도달하면 다시 발생합니다.
 
-#### CompletionPolicy [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#completionpolicy)
+#### CompletionPolicy
 
 - RepeatTemplate의 iterate 메서드 안에서 반복을 중단할지 결정하는 정책
 - 실행 횟수 또는 완료 시기, 오류 발생 시 수행 할 작업에 대한 반복 여부 결정 가능
@@ -3417,13 +3580,13 @@ ChunkProvider는 내부적으로 RepeatTemplate을 갖고 있고 이를 이용�
   - TimeoutTerminationPolicy : 반복 시점부터 현재 시점까지 소요된 시간이 설정된 시간보다 크면 반복 종료
   - CountingCompletionPolicy : 일정한 카운트를 계산 및 집계해서 카운트 제한 조건이 만족하면 반복 종료
 
-#### RepeatStatus [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#repeatstatus)
+#### RepeatStatus
 
 - 스프링 배치의 처리가 끝났는지 판별하기 위한 Enum(열거형)
 - CONTINUABLE : 작업이 남아있음
 - FINISHED : 더 이상의 반복 없음
 
-#### 예시 [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#예시)
+#### Sample12
 
 ```
 @Slf4j
@@ -3518,7 +3681,7 @@ process 부분만 따로 떼어내서 여러 정책을 함께 사용하는 방�
 
 
 
-### FaultTolerant [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#faulttolerant)
+### FaultTolerant
 
 ------
 
@@ -3535,16 +3698,16 @@ process 부분만 따로 떼어내서 여러 정책을 함께 사용하는 방�
 
 FaultTolerant 구조는 청크 기반의 프로세스 기반 위에 Skip과 Retry 기능을 추가되어 재정의 되어 있습니다.
 
-### API [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#api)
+### API
 
 ![그림4](https://backtony.github.io/assets/img/post/spring/batch/10/10-4.PNG)
 
-Skip [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#skip)
+## 2.9 Skip
 
 - Skip은 데이터를 처리하는 동안 설정된 Exception이 발생했을 경우, 해당 데이터 처리를 건너뛰는 기능입니다.
 - 데이터의 사소한 오류에 대해 Step의 실패처리 대신 Skip함으로써, 배치수행의 빈번한 실패를 줄일 수 있습니다.
 
-#### 동작 방식 [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#동작-방식)
+#### 동작 방식
 
 ![그림5](https://backtony.github.io/assets/img/post/spring/batch/10/10-5.PNG)
 
@@ -3560,11 +3723,11 @@ Skip [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#s
   - 캐싱된 데이터로 itemReader는 itemProcessor로 넘깁니다.
   - itemProcessor는 하나씩 다시 처리하고 List로 itemWriter로 보내지 않고 개별로 한 개씩 itemWriter로 보냅니다.
 
-#### 동작 과정 [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#동작-과정)
+#### 동작 과정
 
 ![그림7](https://backtony.github.io/assets/img/post/spring/batch/10/10-7.PNG)
 
-#### 예시 : itemReader Skip [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#예시--itemreader-skip)
+#### Example13: itemReader Skip
 
 ```
 @Configuration
@@ -3619,7 +3782,7 @@ public class HelloJobConfiguration {
 청크 사이즈가 5이기 때문에 첫 번째 읽기 작업에서는 1,2,4,5,10 이 다음 작업으로 넘어갑니다.
 skip에 체이닝으로 .skip을 연달아서 사용하여 여러 개의 Exception을 등록할 수도 있습니다.
 
-#### 예시 : itemProcessor Skip [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#예시--itemprocessor-skip)
+#### Example14 : itemProcessor Skip [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#예시--itemprocessor-skip)
 
 ```
 @Configuration
@@ -3702,7 +3865,7 @@ itemProcessor 부분에서 3번째 아이템에서 예외가 발생합니다.
 설명했듯이 itemReader는 캐싱된 데이터를 읽어서 다시 itemProcessor로 넘기기 때문에 출력이 찍히지 않습니다.
 출력에서 보면 itemProcessor가 다시 청크단위로 재시작되는 것을 확인할 수 있습니다.
 
-#### 예시 : itemWriter Skip [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#예시--itemwriter-skip)
+#### Example15: itemWriter Skip [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#예시--itemwriter-skip)
 
 ```
 @Configuration
@@ -3797,7 +3960,7 @@ itemReader : 10
 
 예외가 발생하고 난 후 itemProcessor는 itemWriter로 리스트가 아니라 한건씩만 보내서 처리하고 있는 것을 확인할 수 있습니다.
 
-Retry [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#retry)
+## 2.10 Retry
 
 - ItemProcessor, ItemWriter에서 설정된 Exception이 발생했을 때, 지정한 정책에 따라 데이터 처리를 재시도하는 기능입니다.
 - ItemReader에서는 지원하지 않습니다.
@@ -3805,7 +3968,7 @@ Retry [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#
 - **Retry Count는 Item마다 각각 가지고 있습니다.**
 - RetryLimit 횟수 이후에도 재시도가 실패한다면 **recover** 에서 후속작업을 처리할 수 있습니다.
 
-#### 동작 방식 [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#동작-방식-1)
+#### 동작 방식
 
 ![그림6](https://backtony.github.io/assets/img/post/spring/batch/10/10-6.PNG)
 기존에는 itemProcessor와 itemWriter는 ChunkProcessor에서 실행이 되었지만, Retry 기능이 활성화되면 RetryTemplate 안에서 ItemProcessor와 itemWriter가 실행됩니다.
@@ -3814,11 +3977,11 @@ itemProcessor에서 예외가 발생하면 다시 Chunk 단계의 처음부터 �
 itemReader는 캐시에 저장된 값은 itemProcessor로 넘기고 itemProcessor가 수행되게 됩니다.
 itemWriter는 skip과 다르게 원래대로 List로 한 번에 처리합니다.
 
-#### 동작 과정 [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#동작-과정-1)
+#### 동작 과정
 
 ![그림8](https://backtony.github.io/assets/img/post/spring/batch/10/10-8.PNG)
 
-#### 예시 : retry Writer [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#예시--retry-writer)
+#### Example16: retry Writer
 
 ```
 @Configuration
@@ -3913,7 +4076,7 @@ itemReader에서는 캐시한 데이터를 사용하기에 콘솔에 찍히지 �
 Writer에서 예외로 재시작되어도 Processor에서 한개씩 보내지 않고 List로 한번에 보내서 처리하게 됩니다.
 retryLimit이 2이므로 2번 재시작이 가능하고 3세트 진행 도중에 retryLimit 범위를 넘어가기 때문에 예외가 발생합니다.
 
-#### 예시 : retry Processor [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#예시--retry-processor)
+#### Exampl17: retry Processor
 
 ```
 @Configuration
@@ -4003,7 +4166,7 @@ itemProcessor에서는 4번째 Item을 처리할 때 예외가 터지게 되지�
 itemReader에서는 캐시한 데이터를 사용하기에 콘솔에 찍히지 않습니다.
 결과적으로 3세트 진행 도중에 retryLimit 범위를 넘어가기 때문에 예외가 발생합니다.
 
-#### 예시 : retry + skip [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#예시--retry--skip)
+#### Example18 : retry + skip
 
 위의 예시들처럼 예외가 발생했을 때 그냥 해당 아이템을 Skip하고 재시도하고 싶을 수 있습니다.
 이때는 Skip과 함께 사용하면 됩니다.
@@ -4058,7 +4221,7 @@ recover코드로 진입하여 여기서 해당 item을 skip 처리하고 skipCou
 
 **만약 Writer에서 2번 예외가 발생해서 3회차에 skip처리까지 온다면 3회차 과정에서는 writer 일괄 처리 없이 processor 1개 처리, writer 1개 처리하는 방식으로 진행됩니다.**
 
-#### 예시 : item마다 갖는 retry Count [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#예시--item마다-갖는-retry-count)
+#### Example19 : item마다 갖는 retry Count
 
 ```java
 @Configuration
@@ -4149,7 +4312,7 @@ itemReader = 10
 위 코드에서는 skip으로 인해 retryLimit이 넘어간 item들을 skip 처리됩니다.
 즉, 1,2,4,5는 skip처리되고 skipLimit이 4이므로 범위 안에 있기 때문에 정상적으로 처리가 완료됩니다.
 
-#### 예시 : recover custom [Permalink](https://backtony.github.io/spring/2022-01-28-spring-batch-10/#예시--recover-custom)
+#### Example20 : recover custom
 
 ```java
 @Configuration
@@ -4296,12 +4459,6 @@ doWithRetry에는 프로세서에서 할 일반적인 작업을 명시하고 rec
 ## *Spring Batch Application 전개 전략
 
 온라인, 온라인배치, 일반배치 그림추가
-
-
-
-## *Jib 활용 Containerizing
-
-Docker 실행.
 
 
 
