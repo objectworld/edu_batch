@@ -419,11 +419,11 @@ https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dag-run.html
 
     `0 0 * * *` : daily (자정 실행)
     `0 0 * 0` : 매주 (일요일 자정에 실행)
-
+    
     `0 0 1 * *` : 매월 1일 자정
-
+    
     `45 23 * * MON, SAT` : 매주 월요일, 토요일 23:45
-
+    
     `0 0 * * MON-FRI` : 주중 평일 자정에 실행
 
 - 빈도 기반의 스케줄 간격 설정하기 : timedelta(표준 라이브러리인 datatime 모듈에 포함된)인스터스를 사용하면 됩니다 
@@ -601,35 +601,38 @@ sensor = SFTPSensor(
 
 ## 2.1 사전준비
 
-우선 설치를 하기위해서 Airflow 공식 Helm설치 홈페이지를 참고합니다.
 
-링크 : https://airflow.apache.org/docs/helm-chart/stable/index.html
-
-[ Helm Chart for Apache Airflow — helm-chart Documentation airflow.apache.org](https://airflow.apache.org/docs/helm-chart/stable/index.html)
 
 ### 2.1.1 install helm chart Airflow
 
 ```
 helm repo add apache-airflow https://airflow.apache.org
-helm upgrade --install airflow apache-airflow/airflow --namespace airflow --create-namespace
+helm pull apache-airflow
+tart -zxvf airflow-1.11.0.tgz
 ```
 
-1번 라인에서 Helm Chart를 등록하고 2번 라인에서 Helm Chart를 통해서 설치를 진행합니다.
 
-설치된 Helm의 이름은 airflow이며 이 Helm Chart를 통해서 설치되는 위치는 새로 생성한 airflow namespace에 설치됩니다.
 
  
 
-### 2.1.2 github access token 생성하기
+### 2.1.2 git-sync 를 위한 Secret준비
 
-github access token을 아래 절차에 따라 발급받는다.
+인코딩 사이트 : https://www.base64encode.org/ko/ 
 
-1. github > user profile누르면 나오는 settings 에 들어간다.
-2. 좌측 메뉴 맨 아래에 Developer settings 에 들어간다.
-3. 좌측 메뉴 맨 아래에 Personal access tokens 들어간다.
-4. Generate new token 눌러서 access token 생성하고 복사해놓는다. (권한은 repo 권한만 주면됨)
-
-생성하고 다른페이지가면 바로 감춰지니까 미리미리 잘 복사해놓자.
+```yaml
+#secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: git-credentials
+  namespace: airflow
+type: Opaque
+data:
+  GIT_SYNC_USERNAME: {아이디 base64인코딩}
+  GIT_SYNC_PASSWORD: {비번 base64인코딩}
+---
+kubectl apply -f secret.yaml
+```
 
 
 
@@ -639,53 +642,19 @@ github access token을 아래 절차에 따라 발급받는다.
 
 ### 2.2.1 helm 설정파일 수정하기
 
-이제 helm chart 설정파일의 git sync 부분을 수정해준다. url 부분이 핵심이고, 아래 양식으로 써주면된다.
-`http://{내 githubid} : {내 access token} @ github.com / {내 githubid} / {github repository명}`
 
-```
-## Configure Git repository to fetch DAGs
-  git:
-    ## berrrrr는 제 id입니다. (각자 자기 github id로 변경하세요)
-    ## url to clone the git repository (access token은 가립니다). 
-    ## airflow-test repository에 DAG를 넣는다고 가정합니다. 
-    url: https://berrrrr:accesstoken넣으세요@github.com/berrrrr/airflow-test
-    ##
-    ## branch name, tag or sha1 to reset to
-    ref: master
-    ## pre-created secret with key, key.pub and known_hosts file for private repos
-    secret: 
-    ## The host of the repo so for example if a github repo put github.com (Only need if using ssh not https git sync)
-    repoHost:
-    ## The name of the private key in your git sync secret (Only need if using ssh not https git sync)
-    privateKeyName:
-    gitSync:
-      ## Turns on the side car container
-      enabled: true
-      ## Image for the side car container
-      image:
-        ## docker-airflow image (공식 docker이미지입니다. 아래 주소 그대로 써주세요)
-        repository: k8s.gcr.io/git-sync
-        ## image tag (버전은 이게 최신은아닐거같지만..ㅋ)
-        tag: v3.1.1
-        ## Image pull policy
-        ## values: Always or IfNotPresent
-        pullPolicy: IfNotPresent
-      ## The amount of time in seconds to git pull dags (sync 맞출 간격입니다. 저는 1분간격으로 땡겨오게했습니다)
-      refreshTime: 60 
-  initContainer:
-    ## Fetch the source code when the pods starts
+
+helm chart 설정파일(values.yaml)의 **dags.gitSync**부분을 수정해준다. 
+
+
+
+```yaml
+dags:
+ ...
+  gitSync:
     enabled: true
-    ## Image for the init container (any image with git will do)
-    image:
-      ## docker-airflow image
-      repository: k8s.gcr.io/git-sync 
-      ## image tag
-      tag: v3.1.1
-      ## Image pull policy
-      ## values: Always or IfNotPresent
-      pullPolicy: IfNotPresent
-    ## install requirements.txt dependencies automatically
-    installRequirements: true
+    repo: http://gitlab.ssongman.duckdns.org/cjs/git-sync.git
+    branch: main
 ```
 
 일렇게해서 배포하면 git-sync용 컨테이너가 따로생겨서 계속 github에 있는 dag파일들을 땡겨온다.
@@ -694,8 +663,15 @@ github access token을 아래 절차에 따라 발급받는다.
 
 ### 2.2.2 설치
 
-```
-helm install ~~~
+```powershell
+(PowerShell 실행 기준 )
+helm upgrade --install airflow apache-airflow/airflow --namespace airflow --create-namespace `
+--set dags.gitSync.enabled=true `
+--set dags.gitSync.repo=http://gitlab.ssongman.duckdns.org/cjs/git-sync.git `
+--set dags.gitSync.branch=main `
+--set dags.gitSync.subPath=airflow/dags `
+--set dags.gitSync.credentialsSecret=git-credentials 
+
 ```
 
 
@@ -703,16 +679,16 @@ helm install ~~~
 ### 2.2.3 설치확인
 
 ```
-kubectl get po -n airflow
+kubectl get pod -n airflow
 ```
 
 kubectl 명령어를 통해서 방금 생성한 airflow namespace에 pod를 조회해 보자.
 
-
-
-![img](https://blog.kakaocdn.net/dn/JWPQE/btrAAbtxJOM/iNSTWB9WuN5kj92hOzsLz1/img.png)
+![image-20231016020230000](airflow_asset/image-20231016020230000.png)
 
  
+
+
 
 ### 2.3.4 Airflow 접속
 
@@ -743,6 +719,22 @@ kubectl port-forward svc/airflow-webserver 8080:8080 -n airflow
 ![img](https://blog.kakaocdn.net/dn/cwgaMU/btrACLOsnFu/cF5qP2x6V2KsfJxKqTkrKK/img.png)
 
 
+
+### 2.3.5 Airflow Connection 생성
+
+**Admin -> Connections ->  '+' 클릭**
+
+![image-20231016005706039](airflow_asset/image-20231016005706039.png)
+
+Connection Id : user_api
+
+Connection Type : HTTP 
+
+Host : https://randomuser.me/
+
+입력 후 Save
+
+![image-20231016013713502](airflow_asset/image-20231016013713502.png)
 
 
 
@@ -894,7 +886,7 @@ Web UI에서 확인하면 ‘Off’였던 상태가 ‘On’으로 변경되고,
 
 Bash 명령어를 수행하는 Operator
 
-Example
+**example_bash_operator.py**
 
 ```python
 from builtins import range
@@ -937,6 +929,8 @@ task.set_downstream(run_this_last)
 
 
 
+**example_bash_operator2.py**
+
 ```python
 from __future__ import annotations
 
@@ -948,9 +942,9 @@ from airflow.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
 
 with DAG(
-    dag_id="example_bash_operator",
+    dag_id="example_bash_operator2",
     schedule="0 0 * * *",
-    start_date=pendulum.datetime(2021, 1, 1, tz="KST"),
+    start_date=pendulum.datetime(2021, 1, 1, tz="UTC"),
     catchup=False,
     dagrun_timeout=datetime.timedelta(minutes=60),
     tags=["example", "example2"],
@@ -1003,7 +997,7 @@ if __name__ == "__main__":
 
 Python 함수를 실행하는 Operator
 
-Example
+**example_python_operator.py**
 
 ```python
 from airflow.models import DAG
@@ -1070,6 +1064,8 @@ t1 >> [t2, t3]
 
 Python 함수의 결과에따라 Flow를 지정하는 Operator 
 
+**branch_python_operator.py**
+
 ```python
 import random
 from datetime import datetime
@@ -1089,7 +1085,7 @@ def choose_branch(**kwargs):
     print(f'chosen: {chosen}')
     return chosen
 
-with DAG(dag_id='branch_test', default_args=default_args, schedule_interval=None) as dag:
+with DAG(dag_id='branch_python_operator', default_args=default_args, schedule_interval=None) as dag:
     start_dag = BashOperator(task_id='start', bash_command='echo start')
 
     branching = BranchPythonOperator(task_id='choose_branch', python_callable=choose_branch)
@@ -1159,6 +1155,8 @@ Http Request를 수행하는 Operator
 
 Example
 
+**example_http_operator.py**
+
 ```python
 from airflow import DAG
 from airflow.providers.http.operators.http import SimpleHttpOperator
@@ -1166,13 +1164,16 @@ from airflow.providers.http.sensors.http import HttpSensor
 from datetime import datetime, timedelta
 import json
 
-seven_days_ago = datetime.combine(datetime.today() - timedelta(7),
-                                  datetime.min.time())
+
+default_args = {
+    'start_date': datetime(2021, 7, 31),
+    'schedule_interval': '@daily'
+}
 
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': seven_days_ago,
+    'start_date': datetime(2021, 7, 31),
     'email': ['airflow@airflow.com'],
     'email_on_failure': False,
     'email_on_retry': False,
@@ -1186,58 +1187,31 @@ dag.doc_md = __doc__
 
 # t1, t2 and t3 are examples of tasks created by instatiating operators
 t1 = SimpleHttpOperator(
-    task_id='post_op',
-    endpoint='api/v1.0/nodes',
-    data=json.dumps({"priority": 5}),
-    headers={"Content-Type": "application/json"},
-    response_check=lambda response: True if len(response.json()) == 0 else False,
-    dag=dag)
-
-t5 = SimpleHttpOperator(
-    task_id='post_op_formenc',
-    endpoint='nodes/url',
-    data="name=Joe",
-    headers={"Content-Type": "application/x-www-form-urlencoded"},
-    dag=dag)
+        task_id='extracting_user1',
+        http_conn_id='user_api',
+        endpoint='api/',
+        method='GET',
+        response_filter=lambda response: json.loads(response.text),
+        log_response=True
+    )
 
 t2 = SimpleHttpOperator(
-    task_id='get_op',
-    method='GET',
-    endpoint='api/v1.0/nodes',
-    data={"param1": "value1", "param2": "value2"},
-    headers={},
-    dag=dag)
+        task_id='extracting_user2',
+        http_conn_id='user_api',
+        endpoint='api/',
+        method='GET',
+        response_filter=lambda response: json.loads(response.text),
+        log_response=True
+    )
 
-t3 = SimpleHttpOperator(
-    task_id='put_op',
-    method='PUT',
-    endpoint='api/v1.0/nodes',
-    data=json.dumps({"priority": 5}),
-    headers={"Content-Type": "application/json"},
-    dag=dag)
+is_api_available = HttpSensor(
+        task_id='is_api_available',
+        http_conn_id='user_api',
+        endpoint='api/'
+    )
 
-t4 = SimpleHttpOperator(
-    task_id='del_op',
-    method='DELETE',
-    endpoint='api/v1.0/nodes',
-    data="some=data",
-    headers={"Content-Type": "application/x-www-form-urlencoded"},
-    dag=dag)
-
-sensor = HttpSensor(
-    task_id='http_sensor_check',
-#    conn_id='http_default', default 
-    endpoint='',
-    params={},
-    response_check=lambda response: True if "Google" in response.content else False,
-    poke_interval=5,
-    dag=dag)
-
-t1.set_upstream(sensor)
+t1.set_upstream(is_api_available)
 t2.set_upstream(t1)
-t3.set_upstream(t2)
-t4.set_upstream(t3)
-t5.set_upstream(t4)
 ```
 
 
@@ -1276,7 +1250,7 @@ method가 POST 인데 data 인자에 parameter 로 넘겨줄 부분을 적어주
 
 KubernetesPodOperator는 어떤 언어 상관없이 Dockerfile로 작성된 빌드 된 image를 airflow에서 kubernetes Python client를 호출하여 docker image를 컨테이너로 실행시켜주는 operator
 
-Example
+**example_KubernetesPodOperator.py**
 
 ```python
 from datetime import datetime, timedelta
@@ -1290,7 +1264,7 @@ from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import (
     KubernetesPodOperator,
 )
 
-dag_id = 'KubernetesPodOperator-sample'
+dag_id = 'example_KubernetesPodOperator'
 
 task_default_args = {
     'owner': 'cjs',
@@ -1514,6 +1488,14 @@ with DAG(dag_id="mysql_to_mssql", start_date=days_ago(2), tags=['mysql','mssql']
 ## 2.5 Sensor
 
 ### 2.5.1 Connection 세팅
+
+
+
+https://moo-on.tistory.com/70
+
+
+
+
 
 생성한 Connection은 아래와 같다.
 
@@ -1955,8 +1937,6 @@ pull.set_upstream([push1, push2])
 STS의 Project Explorer에서 대상 프로젝트 선택 후 컨텍스트 메뉴의 Run As > Maven Build ... 을 클릭한 후 Name에 적당한 이름을 넣고 Goals에 아래 명령어를 입력한다.
 
 clean compile jib:build
-
-![image2022-10-21_10-52-58](C:\Users\KTDS\Desktop\image2022-10-21_10-52-58.png)
 
 - 위 설정을 한번 한 후 이후에는 Run As > Maven Build 를 클릭하면 최초 생성 시 지정한 이름을 선택하고 OK 하면 동일하게 동작한다.
 
