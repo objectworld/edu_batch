@@ -20,7 +20,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 public class Sample_03_JobConfiguration {
 
     @Bean
-    public Job helloJob(JobRepository jobRepository, Step jobStep, Step scopeStep02) {
+    public Job sample03(JobRepository jobRepository, Step jobStep, Step scopeStep02) {
         return new JobBuilder("sample03", jobRepository)
                 .start(jobStep) // null로 넣으면 DI로 알아서 주입
                 .incrementer(new RunIdIncrementer())
