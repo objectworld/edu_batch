@@ -69,7 +69,7 @@ Airflow가 배치 지향 (Batch-oriented) 데이터 파이프라인을 구현하
 
 ## 1.2 **아키텍처**
 
-*Airflow는 워크플로를* 구축하고 실행할 수 있는 플랫폼입니다 . 
+**Airflow는 워크플로우를 구축하고 실행할 수 있는 플랫폼**입니다 . 
 
 워크플로는 **DAG (방향성 비순환 그래프)** 로 표시되며 **Task(작업)**이라는 개별 작업 조각을 포함하며 종속성과 데이터 흐름을 고려하여 정렬됩니다.
 
@@ -186,9 +186,9 @@ Airflow는 크게 다음과 같은 컴포넌트들로 구성되어 있습니다.
 - DAG, 해당 실행 및 사용자, 역할 및 연결과 같은 기타 Airflow 구성에 대한 메타데이터를 저장합니다.
   - Meta Database는 Airflow의 DAG, DAG Run, Task Instance, Variables, Connections 등 여러 컴포넌트에서 사용해야하는 데이터를 저장합니다. Webserver, Scheduler, Worker 모두 Meta Database와 통신하기 때문에 Meta Database는 Scheduler와 더불어 매우 중요한 컴포넌트입니다.
   - Airflow를 위한 메타스토어 설정
-    - 메타스토어(metastore) : Airflow에서 일어나는 모든 일은 데이터베이스에 등록됩니다
-    - 워크플로 스크립트 : 스케줄러를 통해 작업 내역을 분석 및 관리하는 역할을 수행하며 메타스토어에 그 해석된 내용을 저장하는 등의 여러 컴포넌트로 구성되어 있습니다.
-    - Airflow는 Python ORM(Object Relational Mapper) 프레임워크인 SQLAlchemy를 사용하여 모든 데이터베이스 태스크를 수행하며 SQL 쿼리를 수동으로 작성하는 대신, 직접 데이터베이스에 직접 편리하게 작성할 수 있습니다.
+    - **메타스토어**(metastore) : Airflow에서 일어나는 모든 일은 데이터베이스에 등록됩니다
+    - **워크플로 스크립트** : 스케줄러를 통해 작업 내역을 분석 및 관리하는 역할을 수행하며 메타스토어에 그 해석된 내용을 저장하는 등의 여러 컴포넌트로 구성되어 있습니다.
+    - Airflow는 Python ORM(Object Relational Mapper) 프레임워크인 **SQLAlchemy를 사용**하여 모든 데이터베이스 태스크를 수행하며 SQL 쿼리를 수동으로 작성하는 대신, 직접 데이터베이스에 직접 편리하게 작성할 수 있습니다.
 - Webserver
   - 웹 서버는 파이프라인이 현재 상태에 대한 정보를 시각적으로 표시하고 사용자가 DAG 트리거와 같은 특정 태스크를 수행할 수 있도록 관리하는 역할을 수행합니다.
   - 스케줄러에서 분석한 DAG를 시각화하고 DAG 실행과 결과를 확인할 수 있는 주요 인터페이스를 제공함
@@ -266,9 +266,9 @@ Executor Queue는 RabbitMQ, Redis와 같은 3rd party Tool로 구성된다.
 
 DAG는 일련의 Task(작업)를 통해 실행되며 다음과 같은 세 가지 일반적인 작업 유형이 있습니다.
 
-- 연산자 - DAG의 대부분을 구축하기 위해 빠르게 함께 연결할 수 있는 사전 정의된 작업
-- 외부 이벤트가 발생하기를 전적으로 기다리는 Operator의 특수 하위 클래스인 센서
-- TaskFlow - `@task`Task로 패키지된 사용자 정의 Python 함수입니다.
+- **연산자** - DAG의 대부분을 구축하기 위해 빠르게 함께 연결할 수 있는 사전 정의된 작업
+- **센서** - 외부 이벤트가 발생하기를 전적으로 기다리는 Operator의 특수 하위 클래스인 센서
+- **TaskFlow** - `@task`Task로 패키지된 사용자 정의 Python 함수입니다.
 
 ![img](https://blog.kakaocdn.net/dn/mDZmi/btrWRWO6Siw/EXDfundjff4dKIFIfr5aL0/img.png)
 
@@ -605,10 +605,10 @@ sensor = SFTPSensor(
 
 ### 2.1.1 install helm chart Airflow
 
-```
-helm repo add apache-airflow https://airflow.apache.org
-helm pull apache-airflow
-tart -zxvf airflow-1.11.0.tgz
+```bash
+$ helm repo add apache-airflow https://airflow.apache.org
+$ helm pull apache-airflow/airflow --version 1.11.0
+$ tar -zxvf airflow-1.11.0.tgz
 ```
 
 
@@ -628,10 +628,15 @@ metadata:
   namespace: airflow
 type: Opaque
 data:
-  GIT_SYNC_USERNAME: {아이디 base64인코딩}
-  GIT_SYNC_PASSWORD: {비번 base64인코딩}
----
-kubectl apply -f secret.yaml
+  GIT_SYNC_USERNAME: Y2pz #{아이디 base64인코딩}
+  GIT_SYNC_PASSWORD: bmV3MTIzNCE= #{비번 base64인코딩}
+```
+
+
+
+```bash
+$ kubectl create ns airflow
+$ kubectl apply -f secret.yaml
 ```
 
 
@@ -640,43 +645,28 @@ kubectl apply -f secret.yaml
 
 ## 2.2 Airflow 설치
 
-### 2.2.1 helm 설정파일 수정하기
 
 
-
-helm chart 설정파일(values.yaml)의 **dags.gitSync**부분을 수정해준다. 
-
-
-
-```yaml
-dags:
- ...
-  gitSync:
-    enabled: true
-    repo: http://gitlab.ssongman.duckdns.org/cjs/git-sync.git
-    branch: main
-```
-
-일렇게해서 배포하면 git-sync용 컨테이너가 따로생겨서 계속 github에 있는 dag파일들을 땡겨온다.
-
-
-
-### 2.2.2 설치
+### 2.2.1 설치
 
 ```powershell
-(PowerShell 실행 기준 )
-helm upgrade --install airflow apache-airflow/airflow --namespace airflow --create-namespace `
+(PowerShell)
+$ cd airflow
+$ helm upgrade --install airflow apache-airflow/airflow --namespace airflow --create-namespace `
 --set dags.gitSync.enabled=true `
 --set dags.gitSync.repo=http://gitlab.ssongman.duckdns.org/cjs/git-sync.git `
 --set dags.gitSync.branch=main `
 --set dags.gitSync.subPath=airflow/dags `
---set dags.gitSync.credentialsSecret=git-credentials 
+--set dags.gitSync.credentialsSecret=git-credentials `
 
+#--set ingress.web.enabled=true `
+#--set ingress.web.host=airflow.ssongman.duckdns.org `
+#--set ingress.web.ingressClassName=traefik
 ```
 
 
 
-### 2.2.3 설치확인
+### 2.2.2 설치확인 
 
 ```
 kubectl get pod -n airflow
@@ -690,7 +680,7 @@ kubectl 명령어를 통해서 방금 생성한 airflow namespace에 pod를 조�
 
 
 
-### 2.3.4 Airflow 접속
+### 2.2.3 Airflow 접속
 
 ```
 kubectl get svc -n airflow
@@ -720,7 +710,7 @@ kubectl port-forward svc/airflow-webserver 8080:8080 -n airflow
 
 
 
-### 2.3.5 Airflow Connection 생성
+### 2.2.4 Airflow Connection 생성
 
 **Admin -> Connections ->  '+' 클릭**
 
@@ -748,7 +738,7 @@ Host : https://randomuser.me/
 
 git sync 시 지정한 GitLab 특정경로,
 
-이 디렉토리에 `simple_bash.py` 파일을 생성하고, 작성을 시작한다.
+이 디렉토리에 `tutorial_bash.py` 파일을 생성하고, 작성을 시작한다.
 
 
 
@@ -842,10 +832,11 @@ t1 >> t2
 
 ### 2.3.6 Airflow CLI와 Webserver를 통해 생성된 DAG 확인하기
 
-Airflow CLI로 방금 만든 DAG가 잘 반영되었는지 확인해보자. 원래는 `airflow list_dags` 명령어로 Airflow에 등록된 DAG 목록을 출력할 수 있는데, 여기서는 Docker Compose로 띄워 놓았기 때문에 `airflow list_dags` 명령어 앞에 `docker-compose -f docker-compose-CeleryExecutor.yml run --rm webserver`를 붙여주어야 한다.
+Airflow CLI로 방금 만든 DAG가 잘 반영되었는지 확인해보자. 원래는 `airflow list_dags` 명령어로 Airflow에 등록된 DAG 목록을 출력할 수 있는데, 여기서는 Docker Compose로 띄워 놓았기 때문에 `airflow list_dags` 명령어 앞에 
 
 ```bash
-$ docker exec -it ${CONTAINER_ID} /bin/bash
+
+$ kubectl exec -it ${CONTAINER_ID} -n airflow /bin/bash
 
 $ airflow list_dags 
 -------------------- DAGS ---------------------------------------
@@ -890,7 +881,8 @@ Bash 명령어를 수행하는 Operator
 
 ```python
 from builtins import range
-from airflow.operators import BashOperator, DummyOperator
+from airflow.operators.bash import BashOperator
+from airflow.operators.dummy import DummyOperator
 from airflow.models import DAG
 from datetime import datetime, timedelta
 
@@ -925,70 +917,6 @@ task = BashOperator(
     bash_command='echo "run_id={{ run_id }} | dag_run={{ dag_run }}"',
     dag=dag)
 task.set_downstream(run_this_last)
-```
-
-
-
-**example_bash_operator2.py**
-
-```python
-from __future__ import annotations
-
-import datetime
-import pendulum
-
-from airflow import DAG
-from airflow.operators.bash import BashOperator
-from airflow.operators.empty import EmptyOperator
-
-with DAG(
-    dag_id="example_bash_operator2",
-    schedule="0 0 * * *",
-    start_date=pendulum.datetime(2021, 1, 1, tz="UTC"),
-    catchup=False,
-    dagrun_timeout=datetime.timedelta(minutes=60),
-    tags=["example", "example2"],
-    params={"example_key": "example_value"},
-) as dag:
-    run_this_last = EmptyOperator(
-        task_id="run_this_last",
-    )
-
-    # [START howto_operator_bash]
-    run_this = BashOperator(
-        task_id="run_after_loop",
-        bash_command="echo 1",
-    )
-    # [END howto_operator_bash]
-    run_this >> run_this_last
-
-    for i in range(3):
-        task = BashOperator(
-            task_id=f"runme_{i}",
-            bash_command='echo "{{ task_instance_key_str }}" && sleep 1',
-        )
-        task >> run_this
-
-    # [START howto_operator_bash_template]
-    also_run_this = BashOperator(
-        task_id="also_run_this",
-        bash_command='echo "ti_key={{ task_instance_key_str }}"',
-    )
-    # [END howto_operator_bash_template]
-    also_run_this >> run_this_last
-
-# [START howto_operator_bash_skip]
-this_will_skip = BashOperator(
-    task_id="this_will_skip",
-    bash_command='echo "hello world"; exit 99;',
-    dag=dag,
-)
-
-# [END howto_operator_bash_skip]
-this_will_skip >> run_this_last
-
-if __name__ == "__main__":
-    dag.test()
 ```
 
 
@@ -1164,16 +1092,11 @@ from airflow.providers.http.sensors.http import HttpSensor
 from datetime import datetime, timedelta
 import json
 
-
-default_args = {
-    'start_date': datetime(2021, 7, 31),
-    'schedule_interval': '@daily'
-}
-
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': datetime(2021, 7, 31),
+    'start_date': datetime(2023, 10, 10),
+    'schedule_interval': '@daily',
     'email': ['airflow@airflow.com'],
     'email_on_failure': False,
     'email_on_retry': False,
@@ -1185,14 +1108,14 @@ dag = DAG('example_http_operator', default_args=default_args)
 
 dag.doc_md = __doc__
 
-# t1, t2 and t3 are examples of tasks created by instatiating operators
 t1 = SimpleHttpOperator(
         task_id='extracting_user1',
         http_conn_id='user_api',
         endpoint='api/',
         method='GET',
         response_filter=lambda response: json.loads(response.text),
-        log_response=True
+        log_response=True,
+    	dag=dag,
     )
 
 t2 = SimpleHttpOperator(
@@ -1201,17 +1124,12 @@ t2 = SimpleHttpOperator(
         endpoint='api/',
         method='GET',
         response_filter=lambda response: json.loads(response.text),
-        log_response=True
+        log_response=True,
+	    dag=dag,
     )
 
-is_api_available = HttpSensor(
-        task_id='is_api_available',
-        http_conn_id='user_api',
-        endpoint='api/'
-    )
+t1 >> t2
 
-t1.set_upstream(is_api_available)
-t2.set_upstream(t1)
 ```
 
 
@@ -1238,9 +1156,7 @@ method 가 'GET' 일 경우 SimpleHttpOperator의 인자로 넘겨준 data 가 �
 
 'POST' 의 경우 data 는 request body로 들어가게 되고 **parameter 를 받는 부분이 따로 없다.**
 
- 
 
-method가 POST 인데 data 인자에 parameter 로 넘겨줄 부분을 적어주게 되면 
 
 
 
@@ -1286,12 +1202,13 @@ dag = DAG(
     max_active_runs=1
 )
 
-env = Secret(
-    'env',
-    'TEST',
-    'test_env',
-    'TEST',
+secret_env = k8s.V1Secret(
+    deploy_type='env',  # env, volume 2가지 타입이 있다. volume을 사용하면 deploy_target 에 path를 적으면 된다.
+    deploy_target=None, # deploy_target을 설정하지 않으면 모든 secrets들을 mount 한다. 
+		# 특정 secret을 사용하기 위해서는 key parameter에 str 타입으로 이름을 쓰면 된다.
+    secret="secret object name", #  Kuberntes 의 secret object 이름.
 )
+
 
 pod_resources = Resources()
 pod_resources.request_cpu = '500m'
@@ -1310,7 +1227,7 @@ run = KubernetesPodOperator(
     task_id="kubernetespodoperator",
     namespace='t-sa',
     image='test/image',
-    secrets=[env],
+    secrets=[secret_env],
     image_pull_secrets=[k8s.V1LocalObjectReference('image_credential')],
     name="job",
     is_delete_operator_pod=True, #Pod operator가 동작하고 난 후 삭제
@@ -1325,164 +1242,6 @@ start >> run
 
 
 
-### 2.4.7 MySqlOperator
-
-
-
-**1.**  **Connection Setting**
-
-**1)**  **Web UI**
-
-A.   UI 상단에 Admin의 Sub 메뉴로 Connections
-
-![img](https://blog.kakaocdn.net/dn/3Aab6/btq7myxaFji/CScuoVrnMwkCLr9OOYCpck/img.jpg)
-
-
-
- 
-
-B.   airflow db init 명령을 진행하면 default로 몇 개의 Connection이 생성되어 있다.
-
-C.   Connction 설정
-
-![img](https://blog.kakaocdn.net/dn/ccMXTy/btq7o2xjeNb/eN0kOLdny3NjT3mMJPN1bk/img.jpg)
-
-
-
-​             i.     Conn id : 추후 DAG 작성 시 사용하는 연결 ID
-
-​            ii.     Conn Type : airflow provider package를 설치하면 나오는 연결 타입
-
-​            iii.     Schema : 데이터베이스명
-
-​            iv.     Login : 로그인 아이디
-
-​            v.     Password : 비밀번호
-
-​            vi.     Port : DB 연결 포트
-
-​           vii.     Extra : Connection에 사용되는 Parameter 값으로 uri 입력시의 ? 뒷 절을 의미한다.
-
-(ㄱ) ex >
-
-conn-uri 'my-conn-type://login:password@host:port/schema?param1=val1&param2=val2'
-
- 
-
-(ㄴ) ?param1=val1&param2=val2 절을 extra로 설정하면 다음과 같다.
-
-json.dumps(dict(param1='val1', param2='val2'))
-
-```python
-from airflow import DAG
-from airflow.operators.generic_transfer import GenericTransfer
-from airflow.providers.mysql.operators.mysql import MySqlOperator
-from airflow.providers.microsoft.mssql.operators.mssql import MsSqlOperator
-from airflow.utils.task_group import TaskGroup
-from airflow.operators.dummy import DummyOperator
-from airflow.utils.dates import days_ago
-from datetime import timedelta
-
-with DAG(dag_id="mysql_to_mssql", start_date=days_ago(2), tags=['mysql','mssql']) as dag:
-    default_args={'owner': 'airflow'},
-    schedule_interval=timedelta(days=1),
-
-    start = DummyOperator(task_id="start")
-    end = DummyOperator(task_id="end")
-
-    mysql_insert_sql = "INSERT INTO {{ params.table }} ({{ params.col1 }}) VALUES( {{ params.val1 }} )"
-
-    insert_mysql_task = MySqlOperator(
-        task_id='insert_data_mysql',
-        mysql_conn_id='mysql_local',
-        database='test',
-        sql=mysql_insert_sql,
-        params={
-            "table":"airflow_test",
-            "col1":"a",
-            "val1":"1"
-            },
-        dag=dag
-    )
-
-    with TaskGroup("mysql_create", tooltip="Tasks for mysql_create") as mysql_create:
-        mysql_drop_sql = "DROP TABLE IF EXISTS {{ params.table }} ;"
-
-        drop_table_mysql_task = MySqlOperator(
-            task_id='drop_table_mysql',
-            mysql_conn_id='mysql_local',
-            database='test',
-            sql=mysql_drop_sql,
-            params={"table":"airflow_test"},
-            dag=dag
-        )
-
-        mysql_create_sql = "CREATE TABLE {{ params.table }} (a int(11) DEFAULT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
-
-        create_table_mysql_task = MySqlOperator(
-            task_id='create_table_mysql',
-            mysql_conn_id='mysql_local',
-            database='test',
-            sql=mysql_create_sql,
-            params={"table":"airflow_test"},
-            dag=dag
-        )
-
-        drop_table_mysql_task >> create_table_mysql_task
-
-#여러 Task를 묶어주는 Group, 아래와 같이 선언하여 사용되며 추후 dag flow를 정할 수 TaskGroup명만으로 사용 한다.
-    with TaskGroup("mssql_create", tooltip="Tasks for mssql_create") as mssql_create:
-        mssql_drop_sql = "DROP TABLE IF EXISTS {{ params.table }} ;"
-
-        drop_table_mssql_task = MsSqlOperator(
-            task_id='drop_table_mssql',
-            mssql_conn_id='mssql_local',
-            database='test',
-            sql=mysql_drop_sql,
-            params={"table":"airflow_test"},
-            dag=dag
-        )
-
-        mssql_create_sql = "CREATE TABLE {{ params.table }} (a int)"
-
-        create_table_mssql_task = MsSqlOperator(
-            task_id='create_table_mssql',
-            mssql_conn_id='mssql_local',
-            database='test',
-            sql=mssql_create_sql,
-            params={"table":"airflow_test"},
-            dag=dag
-        )
-
-        drop_table_mssql_task >> create_table_mssql_task
-
-    dest_table = "{{ params.database }}.{{ params.schema }}.{{ params.table }}"
-    trans_sql = "select {{ params.col }} from {{ params.database }}.{{ params.table }}"
-    
-    transform_task = GenericTransfer( # source 에 쿼리를 실행하여 결과값을 destination 의 지정 table에 값을 insert 하는 형태로 이루어 진다.
-        task_id = "trans_data",
-        source_conn_id = "mysql_local",
-        destination_conn_id = "mssql_local",
-        destination_table = dest_table,
-        sql=trans_sql,
-        params={
-            "database":"test",
-            "schema":"dbo",
-            "table":"airflow_test",
-            "col":"a"
-            },
-        dag=dag
-    )
-
-    start >> mysql_create >> [insert_mysql_task, mssql_create] >> transform_task >> end
-```
-
-
-
-
-
-- MySqlOperator, JdbcOperator, …, MsSqlOperator: **SQL 명령어를 실행하는 Operator**
-
 
 
 ## 2.5 Sensor
@@ -1491,25 +1250,19 @@ with DAG(dag_id="mysql_to_mssql", start_date=days_ago(2), tags=['mysql','mssql']
 
 
 
-https://moo-on.tistory.com/70
-
-
-
-
-
-생성한 Connection은 아래와 같다.
-
 Conn Type는 File(path)로 설정하고, extra에 path key를 추가하여 dir까지의 경로를 입력한다.
 
 여기서 입력하는 path는 FileSensor에서 filepath와 조합하여 해당 파일이 있는지 없는지 여부를 계속 확인하게 된다.
 
+Conn Id = file_sensor
 
+Conn Type = File(path)
+
+Extra = {"path":"/opt/airflow/sensor"}
 
 ![img](https://blog.kakaocdn.net/dn/wmcIB/btq7CTHVRR5/1DgO3JWX2minXpG3v0TDS0/img.png)
 
 
-
- 
 
 ### 2.5.2 HttpSensor
 
@@ -1534,7 +1287,7 @@ Sensor는 시간, 파일, 외부 이벤트를 기다리며 해당 조건을 충�
 
 
 
- Example
+ **sensor_test.py**
 
 ```python
 from airflow import DAG
@@ -1542,8 +1295,12 @@ from datetime import datetime, timedelta
 from airflow.sensors.filesystem import FileSensor
 from airflow.operators.bash import BashOperator
 from airflow.utils.dates import days_ago
+from airflow.providers.http.operators.http import SimpleHttpOperator
+from airflow.providers.http.sensors.http import HttpSensor
+import json
 
 default_args= {
+    #'start_date'=datetime(2021, 1, 1),
     'start_date': days_ago(1),
     'retries': 0,
     'catchup': False,
@@ -1553,43 +1310,71 @@ default_args= {
 dag = DAG(
         'sensor_test', 
         default_args=default_args, 
-        schedule_interval="@once",
+        #schedule_interval="@once",
+        schedule_interval=timedelta(days=1),
 )
 
-t1 = FileSensor(
-    task_id='sensor_a',
+file_sensor_a = FileSensor(
+    task_id='file_sensor_a',
     fs_conn_id='file_sensor',
     filepath='a.txt',
     dag=dag,
 )
 
-t2 = BashOperator(
-    task_id='cat_a',
+read_file_a = BashOperator(
+    task_id='read_file_a',
     bash_command='cat /opt/airflow/sensor/a.txt',
     dag=dag,
 )
 
-http_sensor = HttpSensor(
-    task_id='http_sensor',
-#    conn_id='http_default', default 
-    endpoint='',
-    params={},
-    response_check=lambda response: True if "Google" in response.content else False,
-    poke_interval=5,
-    dag=dag)
+is_api_available = HttpSensor(
+    task_id='is_api_available',
+    http_conn_id="user_api",
+    endpoint="api/",
+    dag=dag,
+)
 
-get_http_op = SimpleHttpOperator(
-    task_id='get_http_op',
+extracting_user = SimpleHttpOperator(
+    task_id="extracting_user",
+    http_conn_id='user_api',
+    endpoint='api/',
     method='GET',
-    endpoint='api/v1.0/nodes',
-    data={"param1": "value1", "param2": "value2"},
-    headers={},
-    dag=dag)
+    response_filter=lambda response: json.loads(response.content),
+    log_response=True,
+    dag=dag,
+)
+
+file_sensor_a >> read_file_a >> is_api_available >> extracting_user
+
+```
 
 
 
-t1 >> t2 >> http_sensor >> get_http_op
 
+
+```bash
+$ kubectl get pod -n airflow
+NAME                                 READY   STATUS    RESTARTS        AGE
+airflow-postgresql-0                 1/1     Running   1 (8m27s ago)   22h
+airflow-redis-0                      1/1     Running   1 (8m27s ago)   22h
+airflow-scheduler-55cc4f945d-p4tnx   3/3     Running   3 (8m27s ago)   21h
+airflow-statsd-67dbbcd9b-rpgfl       1/1     Running   1 (8m27s ago)   22h
+airflow-triggerer-0                  3/3     Running   4 (8m27s ago)   21h
+airflow-webserver-59bc88fd88-fnf64   1/1     Running   2 (8m27s ago)   21h
+airflow-worker-0                     3/3     Running   3 (8m27s ago)   21h
+
+$ kubectl exec -it airflow-worker-0 -n airflow bash
+kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.
+Defaulted container "worker" out of: worker, git-sync, worker-log-groomer, wait-for-airflow-migrations (init), git-sync-init (init)
+
+airflow@airflow-worker-0:/opt/airflow$mkdir sensor
+airflow@airflow-worker-0:/opt/airflow$cd sensor
+airflow@airflow-worker-0:/opt/airflow/sensor$ cat > a.txt
+aaaaaaaaaaaa
+^C
+
+airflow@airflow-worker-0:/opt/airflow/sensor$ cat a.txt
+aaaaaaaaaaaa
 ```
 
 
@@ -1600,11 +1385,11 @@ t1 >> t2 >> http_sensor >> get_http_op
 
 Xcom은 DAG 내의 task 사이에서 데이터를 전달하기 위해서 사용되는데, CeleryExecutor를 예로 들면, 각 task들이 각기 다른 Worker에서 실행될 수 있으며, 이러한 경우에 Xcom은  task간 데이터 전달을 가능하게 한다. 
 
-Variables와 마찬가지로 key-value의 형식으로 사용되지만, Variables과는 달리 Xcom은 DAG내에서만 공유할 수 있는 변수라는 점이다. Xcom을 이용해 데이터를 전달하는 경우 DataFrame이나 많은 양의 데이터를 전달하는 것은 지원하지 않으며, 소량의 데이터만 전달하는 것을 권장한다. 
+Variables와 마찬가지로 key-value의 형식으로 사용되지만, Variables과는 달리 **Xcom은 DAG내에서만 공유할 수 있는 변수**라는 점이다. Xcom을 이용해 데이터를 전달하는 경우 DataFrame이나 많은 양의 데이터를 전달하는 것은 지원하지 않으며, **소량의 데이터만 전달하는 것을 권장**한다. 
 
-Xcom을 사용하기 위해서는 각 task에서 push, pull 하는 방식으로 기본적으로 사용되지만, PythtonOperator의 경우 return이 자동적으로 Xcom 변수로 지정되게 된다.
+Xcom을 사용하기 위해서는 **각 task에서 push, pull 하는 방식으로 기본적으로 사용**되지만, **PythtonOperator의 경우 return이 자동적으로 Xcom 변수로 지정**되게 된다.
 
-Example
+**xcom-example.py**
 
 ```python
 from airflow import DAG
@@ -1613,8 +1398,8 @@ from airflow.operators.bash import BashOperator
 from datetime import datetime
 
 dag = DAG(
-    dag_id = 'xcom_test',
-    start_date = datetime(2021,9,23),
+    dag_id = 'xcom-example',
+    start_date = datetime(2023,10,10),
     catchup=False,
     schedule_interval='@once'
 )
@@ -1685,210 +1470,45 @@ return_xcom >> xcom_push_task >>xcom_pull_task >> bash_xcom_taskids >> bash_xcom
 
 
 
-#### xcom_pull_task
+### xcom_pull_task
 
 
 
-![img](https://blog.kakaocdn.net/dn/sfhGg/btrfQDWnGT2/1BjCH2NcQs269Vz6Hre1z1/img.png)
+![image-20231017013049342](airflow_asset/image-20231017013049342.png)
 
 
 
-#### bash_xcom_taskids
+### bash_xcom_taskids
 
 
 
-![img](https://blog.kakaocdn.net/dn/coXhWi/btrfPBxWzSG/i3MT9546DwsGvFMsncoko1/img.png)
+![image-20231017013149261](airflow_asset/image-20231017013149261.png)
 
 
 
-#### bash_xcom_key
+### bash_xcom_key
 
 
 
-![img](https://blog.kakaocdn.net/dn/bJVKzF/btrfMr3vfTc/prrChtTiK79P2R94kQl0Ck/img.png)
+![image-20231017013229756](airflow_asset/image-20231017013229756.png)
 
 
 
-#### bash_xcom_pull
+### bash_xcom_pull
+
+![image-20231017013316013](airflow_asset/image-20231017013316013.png)
 
 
 
-![img](https://blog.kakaocdn.net/dn/cwnCqI/btrfMtfV7vY/TLelDoXVeqxwGSqK5mGur1/img.png)
-
-
-
-Airflow Web UI에서 확인하는 것 또한 가능하다.
+### Airflow Web UI
 
 Admin-XComs 메뉴에서 확인이 가능하며 Dag id, task id, key, value 등의 정보를 확인할 수 있다.
 
-
-
-![img](https://blog.kakaocdn.net/dn/ONRzf/btrfMOSba3v/Dol0xBY5hbPIxxIBKPKxP0/img.png)
-
-![img](https://blog.kakaocdn.net/dn/bieOrh/btrfRCXev18/By2idcRqOEDvwbRklaT9sK/img.png)
+![image-20231017013419818](airflow_asset/image-20231017013419818.png)
 
 
 
 
-
-```python
-import json
-from datetime import datetime, timedelta
-
-from airflow import DAG
-from airflow.providers.http.operators.http import SimpleHttpOperator
-from airflow.operators.python import PythonOperator, BranchPythonOperator
-from airflow.utils.trigger_rule import TriggerRule
-
-
-def handle_response(response, **context):
-    print(response)
-    print(response.__dict__)
-    print(response.content)
-    response_json_as_dict = json.loads(response.content)
-    print(response_json_as_dict)
-    if str(response.status_code).startswith('2'):  # to catch 2XX http status code
-        context['task_instance'].xcom_push(key='base_task_xcom', value='success')  # 이건 안됨이 아니라 잘됨.
-        context['task_instance'].xcom_push(key='second_task_number', value=response_json_as_dict.get('next_task_number', 1))
-        return True
-    else:
-        context['task_instance'].xcom_push(key='base_task_xcom', value='fail')  # 애초에 다음으로 진행이 안되니 무의미
-        return False
-
-
-def treat_as_branch(**context):
-    print("Here is treat_as_branch")
-    print(context)
-    base_task_result = context['task_instance'].xcom_pull(key='base_task_xcom')
-    next_task_number = context['task_instance'].xcom_pull(key='second_task_number')
-    print("This is base_task_result")
-    print(base_task_result)
-    return 'http_dummy_task' + str(next_task_number)
-
-
-def complete(**context):
-    print(context)
-
-
-with DAG(
-    dag_id='http_xcom_sample',
-    description='A simple http DAG',
-    schedule_interval=timedelta(hours=1),
-    start_date=datetime(2021, 1, 1),
-    catchup=False,
-    tags=['example'],
-) as dag:
-    base_task = SimpleHttpOperator(
-        task_id='base_task',
-        method='GET',
-        endpoint='/airflow/base-task',
-        http_conn_id='localhost',
-        response_check=handle_response,
-    )
-
-    branch_task = BranchPythonOperator(
-        task_id='branch_task',
-        python_callable=treat_as_branch
-    )
-
-    http_dummy_task1 = SimpleHttpOperator(
-        task_id='http_dummy_task1',
-        method='GET',
-        endpoint='/airflow/dummy-task1',
-        http_conn_id='localhost',
-    )
-
-    http_dummy_task2 = SimpleHttpOperator(
-        task_id='http_dummy_task2',
-        method='GET',
-        endpoint='/airflow/dummy-task2',
-        http_conn_id='localhost',
-    )
-
-    http_dummy_task3 = SimpleHttpOperator(
-        task_id='http_dummy_task3',
-        method='GET',
-        endpoint='/airflow/dummy-task3',
-        http_conn_id='localhost',
-    )
-
-    complete_task = PythonOperator(
-        task_id='complete_task',
-        python_callable=complete,
-        trigger_rule=TriggerRule.ONE_SUCCESS
-    )
-
-    base_task >> branch_task >> [http_dummy_task1, http_dummy_task2, http_dummy_task3] >> complete_task
-
-```
-
-```python
-from __future__ import print_function
-import airflow
-from datetime import datetime, timedelta
-
-seven_days_ago = datetime.combine(
-    datetime.today() - timedelta(7),
-    datetime.min.time())
-args = {
-    'owner': 'airflow',
-    'start_date': seven_days_ago,
-    'provide_context': True
-}
-
-dag = airflow.DAG(
-    'example_xcom',
-    start_date=datetime(2015, 1, 1),
-    schedule_interval="@once",
-    default_args=args)
-
-value_1 = [1, 2, 3]
-value_2 = {'a': 'b'}
-
-def push(**kwargs):
-    # pushes an XCom without a specific target
-    kwargs['ti'].xcom_push(key='value from pusher 1', value=value_1)
-
-def push_by_returning(**kwargs):
-    # pushes an XCom without a specific target, just by returning it
-    return value_2
-
-def puller(**kwargs):
-    ti = kwargs['ti']
-
-    # get value_1
-    v1 = ti.xcom_pull(key=None, task_ids='push')
-    assert v1 == value_1
-
-    # get value_2
-    v2 = ti.xcom_pull(task_ids='push_by_returning')
-    assert v2 == value_2
-
-    # get both value_1 and value_2
-    v1, v2 = ti.xcom_pull(key=None, task_ids=['push', 'push_by_returning'])
-    assert (v1, v2) == (value_1, value_2)
-
-push1 = airflow.operators.PythonOperator(
-    task_id='push', dag=dag, python_callable=push)
-
-push2 = airflow.operators.PythonOperator(
-    task_id='push_by_returning', dag=dag, python_callable=push_by_returning)
-
-pull = airflow.operators.PythonOperator(
-    task_id='puller', dag=dag, python_callable=puller)
-
-pull.set_upstream([push1, push2])
-```
-
-
-
-
-
-출처
-
-```
-
-```
 
 # 별첨
 
@@ -2050,7 +1670,31 @@ hourly job의 경우 현재 시간은 14시인데 execution_date는 13시까지 
 
  
 
-*Trigger
+## *Kubernetes Pod Operator 설치시 필요버전
+
+**package apache-airflow-providers-cncf-kubernetes 릴리스: 7.6.0**
+
+
+
+## 설치
+
+```
+Requirements`지원되는 최소 Airflow 버전에 대해 기존 Airflow 2 설치(아래 참조) 위에 이 패키지를 설치할 수 있습니다.
+pip install apache-airflow-providers-cncf-kubernetes
+```
+
+## 요구사항
+
+이 공급자 패키지에서 지원하는 최소 Apache Airflow 버전은 입니다 `2.4.0`.
+
+| PIP 패키지           | 필요한 버전     |
+| -------------------- | --------------- |
+| `apache-airflow`     | `>=2.4.0`       |
+| `asgiref`            | `>=3.5.2`       |
+| `cryptography`       | `>=2.0.0`       |
+| `kubernetes`         | `>=21.7.0,<24`  |
+| `kubernetes_asyncio` | `>=18.20.1,<25` |
+| `google-re2`         | `>=1.0`         |
 
 
 
@@ -2075,7 +1719,7 @@ https://yhjin.tistory.com/32
 https://developnote-blog.tistory.com/176
 https://developnote-blog.tistory.com/124
 https://todaycodeplus.tistory.com/52
-
+https://airflow.apache.org/docs/apache-airflow-providers-cncf-kubernetes/stable/index.html
 https://github.com/K9Ns/data-pipelines-with-apache-airflow.git
 https://atonlee.tistory.com/196
 ```

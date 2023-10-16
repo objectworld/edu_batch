@@ -3894,10 +3894,10 @@ itemWriter는 skip과 다르게 원래대로 List로 한 번에 처리합니다.
 
 #### 2.9.3.4 Example16: retry Writer
 
-```
+```java
 @Configuration
 @RequiredArgsConstructor
-public class HelloJobConfiguration {
+public class sample16JobConfiguration {
     private final JobBuilderFactory jobBuilderFactory;
     private final StepBuilderFactory stepBuilderFactory;
     private int chunkSize = 5;
@@ -3989,10 +3989,10 @@ retryLimit이 2이므로 2번 재시작이 가능하고 3세트 진행 도중에
 
 #### 2.9.3.5 Exampl17: retry Processor
 
-```
+```java
 @Configuration
 @RequiredArgsConstructor
-public class HelloJobConfiguration {
+public class sample17JobConfiguration {
     private final JobBuilderFactory jobBuilderFactory;
     private final StepBuilderFactory stepBuilderFactory;
     private int chunkSize = 5;
@@ -4137,7 +4137,7 @@ recover코드로 진입하여 여기서 해당 item을 skip 처리하고 skipCou
 ```java
 @Configuration
 @RequiredArgsConstructor
-public class HelloJobConfiguration {
+public class sample19JobConfiguration {
     private final JobBuilderFactory jobBuilderFactory;
     private final StepBuilderFactory stepBuilderFactory;
     private int chunkSize = 5;
@@ -4228,7 +4228,7 @@ itemReader = 10
 ```java
 @Configuration
 @RequiredArgsConstructor
-public class HelloJobConfiguration {
+public class sample20JobConfiguration {
     private final JobBuilderFactory jobBuilderFactory;
     private final StepBuilderFactory stepBuilderFactory;
     private int chunkSize = 5;
@@ -4369,9 +4369,33 @@ doWithRetry에는 프로세서에서 할 일반적인 작업을 명시하고 rec
 
 ## *Spring Batch Application 전개 전략
 
-온라인, 온라인배치, 일반배치 그림추가
+### Online
+
+- 항상 기동되어있음(수시작업)
+- API 호출 등 기존 서비스와 연관
+- spring-boot-starter-web 으로 생성되며 tomcat/netty 등 웹서버를 가지고있음
 
 
+
+### Online-Batch 
+
+- 항상 기동되어있음(수시작업)
+- API 호출에 의해 Batch Job 지가됨
+- 웹서버(Tomcat 등)+ Spring Batch
+
+
+
+### Batch
+
+- 필요시 기동됨(정기작업)
+
+- Airflow Pod Operator 를 통하여 Cluster 내 Pod 로 Batch 시작
+
+- 순수하게 DB,File 등 데이터 가공 목적으로만 사용
+
+- 고성능/대용량 처리
+
+  
 
 ## *Chunk 상세
 
