@@ -667,7 +667,7 @@ $ helm upgrade --install airflow apache-airflow/airflow --namespace airflow --cr
 #--set ingress.web.host=airflow.ssongman.duckdns.org `
 #--set ingress.web.ingressClassName=traefik
 #테스트서버용
-$ helm upgrade --install airflow apache-airflow/airflow --namespace airflow --create-namespace --set dags.gitSync.enabled=true --set dags.gitSync.repo=http://gitlab.ssongman.duckdns.org/cjs/git-sync.git --set dags.gitSync.branch=main --set dags.gitSync.subPath=airflow/dags --set dags.gitSync.credentialsSecret=git-credentials --set ingress.web.enabled=true 
+$ helm upgrade --install airflow apache-airflow/airflow --namespace airflow --create-namespace --set dags.gitSync.enabled=true --set dags.gitSync.repo=http://gitlab.ssongman.duckdns.org/cjs/git-sync.git --set dags.gitSync.branch=main --set dags.gitSync.subPath=airflow/dags --set dags.gitSync.credentialsSecret=git-credentials --set dags.gitSync.wait=60 --set ingress.web.enabled=true 
 --set ingress.web.host=airflow.ssongman.duckdns.org 
 --set ingress.web.ingressClassName=traefik
 ```
