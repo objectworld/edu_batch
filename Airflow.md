@@ -10,9 +10,9 @@
 
 배치 중심 워크플로를 개발, 예약 및 모니터링하기 위한 오픈 소스 플랫폼입니다. Airflow의 확장 가능한 Python 프레임워크를 사용하면 거의 모든 기술과 연결되는 워크플로를 구축할 수 있습니다. 웹 인터페이스는 작업 흐름 상태를 관리하는 데 도움이 됩니다. Airflow는 노트북의 단일 프로세스부터 가장 큰 워크플로를 지원하는 분산 설정까지 다양한 방식으로 배포할 수 있습니다.
 
-Airflow™는 일괄 워크플로 조정 플랫폼입니다. Airflow 프레임워크에는 다양한 기술과 연결하는 연산자가 포함되어 있으며 새로운 기술과 연결하기 위해 쉽게 확장할 수 있습니다. 워크플로의 시작과 끝이 명확하고 정기적으로 실행되는 경우 Airflow DAG로 프로그래밍할 수 있습니다.
+Airflow 프레임워크에는 다양한 기술과 연결하는 연산자가 포함되어 있으며 신기술과 통합하기 위해 쉽게 확장할 수 있습니다. 워크플로의 시작과 끝이 명확하고 정기적으로 실행되는 경우 Airflow DAG로 프로그래밍할 수 있습니다.
 
-클릭보다 코딩을 선호한다면 Airflow가 적합한 도구입니다. 워크플로는 다음을 의미하는 Python 코드로 정의됩니다.
+워크플로는 다음을 의미하는 Python 코드로 정의됩니다.
 
 - 이전 버전으로 롤백할 수 있도록 워크플로를 버전 제어에 저장할 수 있습니다.
 - 여러 사람이 동시에 워크플로를 개발할 수 있습니다.
@@ -658,10 +658,18 @@ $ helm upgrade --install airflow apache-airflow/airflow --namespace airflow --cr
 --set dags.gitSync.branch=main `
 --set dags.gitSync.subPath=airflow/dags `
 --set dags.gitSync.credentialsSecret=git-credentials `
+--set dags.gitSync.wait=60
+
+#삭제시
+#$ helm delete airflow -n airflow
 
 #--set ingress.web.enabled=true `
 #--set ingress.web.host=airflow.ssongman.duckdns.org `
 #--set ingress.web.ingressClassName=traefik
+#테스트서버용
+$ helm upgrade --install airflow apache-airflow/airflow --namespace airflow --create-namespace --set dags.gitSync.enabled=true --set dags.gitSync.repo=http://gitlab.ssongman.duckdns.org/cjs/git-sync.git --set dags.gitSync.branch=main --set dags.gitSync.subPath=airflow/dags --set dags.gitSync.credentialsSecret=git-credentials --set ingress.web.enabled=true 
+--set ingress.web.host=airflow.ssongman.duckdns.org 
+--set ingress.web.ingressClassName=traefik
 ```
 
 
@@ -1175,7 +1183,7 @@ from kubernetes.client import models as k8s
 from airflow.models import DAG, Variable
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.kubernetes.secret import Secret
-from airflow.kubernetes.pod import Resources
+#from airflow.kubernetes.pod import Resources
 from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import (
     KubernetesPodOperator,
 )
@@ -1186,12 +1194,12 @@ task_default_args = {
     'owner': 'cjs',
     'retries': 3,
     'retry_delay': timedelta(minutes=5),
-    'start_date': datetime(2020, 11, 21),
-    'depends_on_past': False,
-    'email': ['bomwo25@mgmail.com'],
+    'start_date': datetime(2023, 10, 10),
+#    'depends_on_past': False,
+    'email': ['cjs@mgmail.com'],
     'email_on_retry': False,
     'email_on_failure': True,
-    'execution_timeout': timedelta(hours=1)
+    'execution_timeout': timedelta(hours=1),
 }
 
 dag = DAG(
@@ -1202,42 +1210,38 @@ dag = DAG(
     max_active_runs=1
 )
 
-secret_env = k8s.V1Secret(
-    deploy_type='env',  # env, volume 2가지 타입이 있다. volume을 사용하면 deploy_target 에 path를 적으면 된다.
-    deploy_target=None, # deploy_target을 설정하지 않으면 모든 secrets들을 mount 한다. 
-		# 특정 secret을 사용하기 위해서는 key parameter에 str 타입으로 이름을 쓰면 된다.
-    secret="secret object name", #  Kuberntes 의 secret object 이름.
-)
-
-
-pod_resources = Resources()
-pod_resources.request_cpu = '500m'
-pod_resources.request_memory = '1024Mi'
-pod_resources.limit_cpu = '1000m'
-pod_resources.limit_memory = '2048Mi'
-
-
-configmaps = [
-    k8s.V1EnvFromSource(config_map_ref=k8s.V1ConfigMapEnvSource(name='secret')),
+env_from = [
+    k8s.V1EnvFromSource(
+				# configmap fields를  key-value 형태의 dict 타입으로 전달한다. 
+        config_map_ref=k8s.V1ConfigMapEnvSource(name="airflow-config"),
+				# secret fields를  key-value 형태의 dict 타입으로 전달한다.
+        secret_ref=k8s.V1SecretEnvSource(name="git-credentials")),
 ]
+
+#pod_resources = k8s.V1ResourceRequirements(
+#    requests={"memory": "500Mi", "cpu": 0.5, "ephemeral-storage": "1Gi"},
+#    limits={"memory": "1Gi", "cpu": 1, "ephemeral-storage": "2Gi"},
+#)
+
 
 start = DummyOperator(task_id="start", dag=dag)
 
 run = KubernetesPodOperator(
     task_id="kubernetespodoperator",
-    namespace='t-sa',
-    image='test/image',
-    secrets=[secret_env],
-    image_pull_secrets=[k8s.V1LocalObjectReference('image_credential')],
+    namespace='airflow',
+    image='nginx',
+#    secrets=[secret_env],
+#    image_pull_secrets=[k8s.V1LocalObjectReference('image_credential')],
     name="job",
     is_delete_operator_pod=True, #Pod operator가 동작하고 난 후 삭제
     get_logs=True, #Pod의 동작하는 로그
-    resources=pod_resources,
-    env_from=configmaps,
+#    container_resource=pod_resources,
+#    env_from=env_from,
     dag=dag,
 )
 
 start >> run
+
 ```
 
 
