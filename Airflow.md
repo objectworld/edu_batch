@@ -1069,48 +1069,9 @@ start >> choose_branch >> b1 >> c1 으로 실행된다. (b2, b3 는 SKIP 됨)
 
  
 
-### 2.4.4 EmailOperator
-
-airflow.cfg [smtp] 설정
-
-```properties
-[smtp]
-
-# If you want airflow to send emails on retries, failure, and you want to use
-# the airflow.utils.email.send_email_smtp function, you have to configure an
-# smtp server here
-smtp_host = smtp.gmail.com
-smtp_starttls = False
-smtp_ssl = True
-# Example: smtp_user = airflow
-smtp_user = smtp_user_gmail_id
-# Example: smtp_password = airflow
-smtp_password = your_password
-smtp_port = 465
-smtp_mail_from = smtp_user_gmail_id
-smtp_timeout = 30
-smtp_retry_limit = 5
-```
-
-Example
-
-```python
-    email_operator = EmailOperator(
-        task_id='send_email',
-        to='receiver@example.com',
-        subject='[TEST] 테스트 메일입니다.',
-        html_content="""
-                        테스트 메일입니다.<br/><br/> 
-                        ninja template<br/>
-                        {{ data_interval_start }}<br/>
-                        {{ ds }}<br/>
-                    """,
-    )
-```
 
 
-
-###  2.4.5 SimpleHttpOperator
+###  2.4.4 SimpleHttpOperator
 
 Http Request를 수행하는 Operator
 
@@ -1195,7 +1156,7 @@ method 가 'GET' 일 경우 SimpleHttpOperator의 인자로 넘겨준 data 가 �
 
 
 
-###  2.4.6 KubernetesPodOperator
+###  2.4.5 KubernetesPodOperator
 
 KubernetesPodOperator는 어떤 언어 상관없이 Dockerfile로 작성된 빌드 된 image를 airflow에서 kubernetes Python client를 호출하여 docker image를 컨테이너로 실행시켜주는 operator
 
