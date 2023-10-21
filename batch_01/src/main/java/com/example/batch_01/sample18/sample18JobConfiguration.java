@@ -1,5 +1,8 @@
-package com.example.batch_01.sample17;
+package com.example.batch_01.sample18;
 
+import com.example.batch_01.sample16.RetryableException;
+import com.example.batch_01.sample16.SkippableException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
@@ -13,41 +16,38 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import com.example.batch_01.sample16.RetryableException;
-import com.example.batch_01.sample16.SkippableException;
-
-import lombok.RequiredArgsConstructor;
-
 @Configuration
 @RequiredArgsConstructor
-public class sample17JobConfiguration {
+public class sample18JobConfiguration {
     private final PlatformTransactionManager transactionManager;
     private final JobRepository jobRepository;
     private int chunkSize = 5;
 
     @Bean
-    public Job sample17() {
-        return new JobBuilder("sample17", jobRepository)
-                .start(sample17_step01())
+    public Job sample18() {
+        return new JobBuilder("sample18", jobRepository)
+                .start(sample18_step01())
                 .incrementer(new RunIdIncrementer())
                 .build();
     }
 
     @Bean
-    public Step sample17_step01() {
-        return new StepBuilder("sample17_step01",jobRepository)
+    public Step sample18_step01() {
+        return new StepBuilder("sample18_step01",jobRepository)
                 .<String, String>chunk(chunkSize,transactionManager)
-                .reader(sample17_customItemReader())
-                .processor(sample17_customItemProcessor1())
-                .writer(sample17_customItemWriter())
+                .reader(sample18_customItemReader())
+                .processor(sample18_customItemProcessor1())
+                .writer(sample18_customItemWriter())
                 .faultTolerant()
                 .retry(RetryableException.class)
                 .retryLimit(2)
+                .skip(RetryableException.class)
+                .skipLimit(2)
                 .build();
     }
 
     @Bean
-    public ItemReader<String> sample17_customItemReader() {
+    public ItemReader<String> sample18_customItemReader() {
         return new ItemReader<String>() {
             int i = 0;
 
@@ -61,7 +61,7 @@ public class sample17JobConfiguration {
     }
 
     @Bean
-    public ItemProcessor<? super String, String> sample17_customItemProcessor1() {
+    public ItemProcessor<? super String, String> sample18_customItemProcessor1() {
         return item -> {
 
 
@@ -75,7 +75,7 @@ public class sample17JobConfiguration {
     }
 
     @Bean
-    public ItemWriter<? super String> sample17_customItemWriter() {
+    public ItemWriter<? super String> sample18_customItemWriter() {
         return items -> {
             System.out.println("items = " + items);
         };

@@ -1,4 +1,4 @@
-package com.example.batch_01.sample00.config;
+package com.example.batch_01.sample01;
 
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -20,8 +20,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
 @RequiredArgsConstructor
-public class Sample02BatchConfiguration {
-    private static final Logger log = LoggerFactory.getLogger(Sample02BatchConfiguration.class);
+public class Sample01_2JobConfiguration {
+    private static final Logger log = LoggerFactory.getLogger(Sample01_2JobConfiguration.class);
 
     @Bean
     public Job scopeJob(JobRepository jobRepository, Step scopeStep01, Step scopeStep02) {

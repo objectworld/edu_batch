@@ -1204,11 +1204,6 @@ env_from = [
         secret_ref=k8s.V1SecretEnvSource(name="git-credentials")),
 ]
 
-#pod_resources = k8s.V1ResourceRequirements(
-#    requests={"memory": "500Mi", "cpu": 0.5, "ephemeral-storage": "1Gi"},
-#    limits={"memory": "1Gi", "cpu": 1, "ephemeral-storage": "2Gi"},
-#)
-
 
 start = DummyOperator(task_id="start", dag=dag)
 
@@ -1504,36 +1499,32 @@ Admin-XComs 메뉴에서 확인이 가능하며 Dag id, task id, key, value 등�
 
 ## *Jib 빌드사용법
 
+
+
 ### plugin 추가
 
 프로젝트 pom.xml 파일의 plugins 에 Jib 빌드를 위한 plugin을 추가한다.
 
 ```xml
-<plugin>
-    <groupId>com.google.cloud.tools</groupId>
-    <artifactId>jib-maven-plugin</artifactId>
-    <version>3.2.1</version>
-    <configuration>
-        <from>
-            <image>eclipse-temurin:17-jre-alpine</image>
-        </from>
-        <to>
-            <image>nexus.dspace.kt.co.kr/icis/icis-samp-ppon</image>
-            <tags>
-                temp
-            </tags>
-            <auth>
-                <username>
-                    icistr-sa
-                </username>
-                <password>
-                    icistr-sa  
-                </password>
-            </auth>                      
-        </to>
-        <allowInsecureRegistries>true</allowInsecureRegistries>
-    </configuration>
-</plugin>
+			<plugin>
+			    <groupId>com.google.cloud.tools</groupId>
+			    <artifactId>jib-maven-plugin</artifactId>
+			    <version>3.2.1</version>
+			    <configuration>
+			        <from>
+			            <image>eclipse-temurin:17-jre-alpine</image>
+			        </from>
+			        <to>
+			            <image>nexus-repo.ssongman.duckdns.org/sample/batch</image>
+			            <tags>0.0.1</tags>
+			            <auth>
+			                <username>admin</username>
+			                <password>new1234!</password>
+			            </auth>                      
+			        </to>
+			        <allowInsecureRegistries>true</allowInsecureRegistries>
+			    </configuration>
+			</plugin>
 ```
 
 - image : nexus에 저장할 이미지명
@@ -1556,7 +1547,19 @@ clean compile jib:build
 
 Run 버튼을 누르면 프로젝트 빌드 후 Nexus Repository에 Push가 된다.
 
+Nexus Repo : http://nexus.ssongman.duckdns.org/
 
+
+
+### Application 수정(클러스터 사용시)
+
+application.yml
+
+```yaml
+...
+spring.datasource.url=jdbc:mysql://hello-mysql.argocd.svc.cluster.local:3306/testdb?useSSL=false
+...
+```
 
 
 

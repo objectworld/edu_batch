@@ -1,4 +1,4 @@
-package com.example.batch_01.sample00.etl;
+package com.example.batch_01.sample01;
 
 /*
 @Component

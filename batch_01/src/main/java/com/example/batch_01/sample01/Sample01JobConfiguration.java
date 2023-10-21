@@ -1,12 +1,5 @@
-package com.example.batch_01.sample00.config;
+package com.example.batch_01.sample01;
 
-import com.example.batch_01.sample00.incrementer.CustomJobParametersIncrementor;
-import com.example.batch_01.sample00.listener.CustomJobAnnotationExecutionListener;
-import com.example.batch_01.sample00.listener.JobCompletionNotificationListener;
-import com.example.batch_01.sample00.model.User;
-import com.example.batch_01.sample00.etl.UserFlatFileItemReader;
-import com.example.batch_01.sample00.etl.UserItemProcessor;
-import com.example.batch_01.sample00.tasklet.RecordCheckTasklet;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,8 +22,8 @@ import java.sql.SQLException;
 @Configuration
 @RequiredArgsConstructor
 //extends DefaultBatchConfiguration
-public class Sample01BatchConfiguration {
-    private static final Logger logger = LoggerFactory.getLogger(Sample01BatchConfiguration.class);
+public class Sample01JobConfiguration {
+    private static final Logger logger = LoggerFactory.getLogger(Sample01JobConfiguration.class);
     private final JobCompletionNotificationListener jobCompletionNotificationListener;
     private final CustomJobAnnotationExecutionListener customJobAnnotationExecutionListener;
     private final UserFlatFileItemReader userFlatFileItemReader;

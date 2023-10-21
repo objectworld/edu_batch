@@ -1,7 +1,6 @@
-package com.example.batch_01.sample12;
+package com.example.batch_01.sample13;
 
 
-import com.example.batch_01.sample13.CustomException;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.stereotype.Component;
 
@@ -11,7 +10,7 @@ public class CustomItemReader implements ItemReader<String> {
     @Override
     public String read() throws CustomException {
         i++;
-        if (i==3){
+        if (i%3==0){
             throw new CustomException("skip exception");
         }
         System.out.println("itemReader : " + i);

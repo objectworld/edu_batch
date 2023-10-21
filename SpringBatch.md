@@ -403,17 +403,7 @@ job은 전체 배치 프로세스를 캡슐화한 엔티티다. 다른 스프링
 
 #### 1.4.1.1 JobInstance
 
-
-
-`JobInstance`는 논리적인 job 실행을 뜻한다. 앞에 있는 다이어그램의 ‘EndOfDay’ `Job`처럼 하루가 끝날 때마다 한번 실행돼야 하는 배치 job을 생각해보자. ‘EndOfDay’ job은 하나지만, `Job`을 각각 실행할 때마다 따로 추적할 수 있어야 한다. 이 예시에서는 매일 하나의 논리적인 `JobInstance`가 필요하다. 예를 들어, 1월 1일 실행, 1월 2일 실행, 등등. 1월 1일에 실행한 배치가 실패해서 다음 날 다시 실행하는 경우, 1월 1일의 작업과 동일한 작업을 재실행해야 한다 (보통 처리 날짜와 처리할 데이터가 일치하는데, 1월 1일에 실행하면 1월 1일의 데이터를 처리한다는 뜻이다). 따라서 각 `JobInstance`는 실행 결과를 여럿 가질 수 있고(`JobExecution`은 이 챕터 뒷부분에 자세히 나온다), 특정 `Job`과 식별 가능한 `JobParameters`에 상응하는 `JobInstance`는 단 한 개뿐이다.
-
-```
-JobInstance`는 로드되는 데이터와는 아무런 관련이 없다. 데이터가 로드되는 방법은 전적으로 `ItemReader` 구현에 달려있다. 예를 들어 앞에서 나온 EndOfDay 케이스에서는, 데이터에 배치를 실행해야 하는 날짜를 의미하는 컬럼이 있을 것이다. 즉 1월 1일 실행은 1일 데이터만 로드하고, 1월 2일 실행은 2일 데이터만 사용할 것이다. 이러한 결정은 비지니스적 요구사항일 가능성이 크므로 `ItemReader`가 결정하도록 설계되었다. 그러나 `JobInstance` 재사용 여부는 이전 실행에서 사용된 상태(`ExecutionContext`는 이번 챕터의 뒷부분에 나온다)를 그대로 사용할지 말지를 결정한다. 새 `JobInstance를 사용한다는것은 처음부터 시작 하는것을 의미하고 이미 있는 instance를 쓴다는것은 멈추었던 곳에서 부터 시작 을 의미한다.
-```
-
-
-
-**Job이 실행될 때 생성되는 Job의 논리적 실행 단위 객체로서 고유하게 식별 가능한 작업 실행을 나타냅니다.**
+JobInstance는 **Job이 실행될 때 생성되는 Job의 논리적 실행 단위 객체로서 고유하게 식별 가능한 작업 실행을 나타냅니다.**
 
 Job의 설정과 구성은 동일하지만 Job이 실행되는 시점에 처리하는 내용은 다릅니다. 즉, 같은 잡을 실행하지만 오늘 실행되는 내용과 내일 실행되는 내용이 다르다는것을 나타냅니다. 
 
@@ -444,7 +434,7 @@ JOB_NAME에는 등록된 잡의 이름이 저장이 되고
 
 JOB_KEY에는 Job Parameter를 해싱한 값이 저장이 됩니다. 
 
-JobName + JobParamter는 중복된 데이터는 가질수 없습니다.
+**JobName + JobParamter는 중복된 데이터는 가질수 없습니다**.
 
  
 
@@ -458,7 +448,7 @@ JobName + JobParamter는 중복된 데이터는 가질수 없습니다.
 
 ![Job Parameters](https://godekdls.github.io/images/springbatch/job-parameters.png)
 
-앞에 나온 예시에서는 각 1월 1일, 1월 2일, 총 두 개의 인스턴스가 있는데, `Job`은 하나지만 `JobParameter`가 두 개 있다: 하나는 2017/01/01에 사용된 파라미터, 다른 하나는 2017/01/02에 사용된 파라미터. 따라서 이 공식이 도출된다: `JobInstance` = `Job` + 식별용 `JobParameters`. 덕분에 개발자는 효율적으로 `JobInstance`를 정의할 수 있으며, 거기 사용될 파라미터도 제어할 수 있다.
+앞에 나온 예시에서는  `Job`은 하나지만 `JobParameter`가 두 개 있다. JobInstance` = `Job` + 식별용 `JobParameters`. 덕분에 개발자는 효율적으로 `JobInstance`를 정의할 수 있으며, 거기 사용될 파라미터도 제어할 수 있다.
 
 > 모든 job 파라미터를 `JobInstance`를 식별하는 데 사용하진 않는다. 기본적으로는 그렇지만, 프레임워크는 `JobInstance`ID 에 관여하지 않는 파라미터를 사용할 수도 있다.
 
@@ -474,9 +464,9 @@ JobInstance에 대한 한번의 시도를 의미하는 객체로서 Job 실행 �
 
 **JobExecution은 FAILED 또는 COMPLETED 등의 Job의 실행 결과 상태를 가지고 있다.**
 
-FAILED : JobInstance 실행이 완료되지 않은 것으로 간주해서 재실행이 가능, JobParameter의 동일한 값으로 계속 실행 가능
+FAILED : JobInstance 실행이 완료되지 않은 것으로 간주해서 **재실행이 가능,** JobParameter의 동일한 값으로 계속 실행 가능
 
-COMPLETED : JobInstance 실행이 완료된 것으로 간주해서 재실행이 불가능
+COMPLETED : JobInstance 실행이 완료된 것으로 간주해서 **재실행이 불가능**
 
  
 
@@ -486,9 +476,9 @@ COMPLETED : JobInstance 실행이 완료된 것으로 간주해서 재실행이 
 
 
 
-`JobExecution` 개념은 Job을 한번 실행하려 했다는 것이다. 하나의 실행은 성공하거나 실패하게 되는데, 실행에 상응하는 `JobInstance`는 실행이 성공적으로 종료되기 전까지는 완료되지 않은 것으로 간주한다. 앞에 나온 EndOfDay `Job`을 실행하고 처음엔 실패한 2017/01/01의 `JobInstance`를 생각해보자. 첫 번째 실행(2017/01/01)과 똑같은 job 파라미터로 재실행한다면, 새 `JobExecution`이 생성된다. 반면 `JobInstance`는 여전히 한 개다.
+`JobExecution` 개념은 Job을 한번 실행하려 했다는 것이다. 하나의 실행은 성공하거나 실패하게 되는데, 실행에 상응하는 `JobInstance`는 실행이 성공적으로 종료되기 전까지는 완료되지 않은 것으로 간주한다. 앞에 나온 EndOfDay `Job`을 실행하고 처음엔 실패한  `JobInstance`를 생각해보자. 첫 번째 실행과 똑같은 job 파라미터로 재실행한다면, 새 `JobExecution`이 생성된다. 반면 `JobInstance`는 여전히 한 개다.
 
-`Job`은 job이 무엇인지와 어떻게 실행되어야 하는지를 설명하고, `JobInstance`는 주로 올바른 재시작을 위해 실행을 그룹화하는 순수한 구조적 오브젝트다. 반면 `JobExecution`은 실제 실행 중에 필요한 기본 스토리지 메커니즘을 제공하며, 아래 테이블에서 보이듯 더 많은 프로퍼티를 관리하고 유지해야 한다.
+`Job`은 job이 무엇인지와 어떻게 실행되어야 하는지를 설명하고, `JobInstance`는 주로 올바른 재시작을 위해 실행을 그룹화하는 **순수한 구조적 오브젝트**다. 반면 `JobExecution`은 실제 실행 중에 필요한 기본 스토리지 메커니즘을 제공하며, 아래 테이블에서 보이듯 더 많은 프로퍼티를 관리하고 유지해야 한다.
 
 **Table 1. JobExecution Properties**
 
@@ -503,7 +493,7 @@ COMPLETED : JobInstance 실행이 완료된 것으로 간주해서 재실행이 
 | executionContext  | 실행하는 동안 유지해야 하는 모든 사용자 데이터를 담고 있는 “property bag”. |
 | failureExceptions | `Job` 실행 중 발생한 예외 리스트. `Job`이 실패할 때 둘 이상의 예외가 발생한 경우에 유용하다. |
 
-이 프로퍼티를 저장해 두면 실행 상태를 결정할 수 있으므로 매우 중요하다. 예를 들어, 01-01의 EndOfDay job을 9:00 PM에 실행해서 9:30에 실패했다면, 배치 메타 데이터 테이블에 아래 엔트리들이 저장된다:
+이 프로퍼티를 저장해 두면 실행 상태를 결정할 수 있으므로 매우 중요하다. 예를 들어, 예시의 EndOfDay job을 9:00 PM에 실행해서 9:30에 실패했다면, 배치 메타 데이터 테이블에 아래 엔트리들이 저장된다:
 
 **Table 2. BATCH_JOB_INSTANCE**
 
@@ -554,17 +544,20 @@ job이 실패했고, 밤새도록 문제를 찾느라 ‘배치 윈도우’가 
 
 ------
 
-#### 1.4.2.4 JobContext
 
-TODO 내용보완
+
+
+
+---
+
+
 
 ### **1.4.2 Step**
 
 Job의 실행 단계를 나타내는 것으로, Tasklet 또는 Chunk 지향 처리 방식으로 구성되어 있다.
 
- \- Batch Job을 구성하는 독립적인 하나의 단계로서 실제 배치 처리를 정의하고 컨트롤하는데 필요한 모든 정보를 가지고 있는 도메인 객체
-
-\- 모든 Job은 하나 이상의 step으로 구성됨
+- Batch Job을 구성하는 독립적인 하나의 단계로서 실제 배치 처리를 정의하고 컨트롤하는데 필요한 모든 정보를 가지고 있는 도메인 객체
+- 모든 Job은 하나 이상의 step으로 구성됨
 
  
 
@@ -579,17 +572,14 @@ Job의 실행 단계를 나타내는 것으로, Tasklet 또는 Chunk 지향 처�
 
 #### 1.4.2.2 StepExecution
 
-\- Step에 대한 한번의 시도를 의미하는 객체로서 Step 실행 중에 발생한 정보들을 저장하는 객체
-
-\- Step이 매번 시도 될 때마다 각 Step별로 생성
-
-\- Job이 재시작 하더라도 이미 성공적으로 완료된 Step은 재시작하지 않고 실패된 Step만 실행
-
-\- 이전 단계에서 Step이 실패해서 현재 Step을 실행하지 않았다면 StepExecution을 생성하지 않음.
-
-즉, Step이 실제로 시작되었을 때만 StepExecution을 생성
+- Step에 대한 한번의 시도를 의미하는 객체로서 Step 실행 중에 발생한 정보들을 저장하는 객체
+- Step이 매번 시도 될 때마다 각 Step별로 생성
+-  Job이 재시작 하더라도 이미 성공적으로 완료된 Step은 재시작하지 않고 실패된 Step만 실행
+- 이전 단계에서 Step이 실패해서 현재 Step을 실행하지 않았다면 StepExecution을 생성하지 않음. 즉, Step이 실제로 시작되었을 때만 StepExecution을 생성
 
 
+
+![Job Hierarchy With Steps](https://godekdls.github.io/images/springbatch/job-hierarchy-with-steps.png)
 
 
 
@@ -617,9 +607,11 @@ Job의 실행 단계를 나타내는 것으로, Tasklet 또는 Chunk 지향 처�
 
 ------
 
+
+
 #### 1.4.2.3 ExecutionContext
 
-`ExecutionContext`는 프레임워크에서 유지/관리하는 키/값 쌍의 컬렉션으로, `StepExecution` 객체 또는 `JobExecution` 객체에 속하는 상태(state)를 저장한다. Quartz에 익숙하다면, JobDataMap과 유사하게 느껴질 것이다. 쉽게 말해 재시작을 용이하게 해준다는 건데, 예를 들어 플랫(flat) 파일을 입력으로 받아 각 라인별로 처리한다면 프레임워크는 커밋 지점에 주기적으로 `ExecutionContext`를 저장한다. 이렇게 하면 `ItemReader`는 실행 중 전원이 나가버리는 등의 치명적인 에러가 발생했을 때에도 상태를 저장해둘 수 있다. 다음 예제와 같이 현재 읽은 라인 수를 컨텍스트에 넣기만 하면 나머지는 프레임워크가 다 처리한다.
+`ExecutionContext`는 프레임워크에서 유지/관리하는 키/값 쌍의 컬렉션으로, `StepExecution` 객체 또는 `JobExecution` 객체에 속하는 상태(state)를 저장한다. Quartz에 익숙하다면, JobDataMap과 유사 
 
 ```
 executionContext.putLong(getKey(LINES_READ_COUNT), reader.getPosition());
@@ -657,7 +649,7 @@ executionContext.putLong(getKey(LINES_READ_COUNT), reader.getPosition());
 | :----------: | :-----------------: |
 |      1       | {piece.count=40321} |
 
-위 예시에서 `Step`은 30분 동안 실행됐고, 40,321개의 ‘peices’(여기서는 이파일의 라인 수를 의미)를 처리했다. 이 값은 프레임워크가 각 커밋 전 업데이트하며, `ExecutionContext` 내 엔티티에 해당하는 여러 row를 포함할 수 있다. 커밋 전에 통지 받으려면 여러 `StepListener` 구현체(또는 `ItemStream`) 중 하나가 필요한데, 자세한 내용은 이 가이드 뒷부분에 나온다. 이전 예시와 동일하게 다음 날 `Job`을 재실행했다고 가정한다. 재시작할 때 데이터베이스로부터 마지막 실행을 가리키는 `ExecutionContext` 값을 조회한다. 아래 예제처럼, `ItemReader`가 열릴 때 컨텍스트에 저장된 상태가 있는지 확인하고, 있다면 해당 컨텍스트를 참조해서 초기화한다.
+위 예시에서 `Step`은 30분 동안 실행됐고, 40,321개의 ‘peices’(여기서는 이파일의 라인 수를 의미)를 처리했다. 이 값은 프레임워크가 각 커밋 전 업데이트하며, `ExecutionContext` 내 엔티티에 해당하는 여러 row를 포함할 수 있다. 커밋 전에 통지 받으려면 여러 `StepListener` 구현체 중 하나가 필요합니다. 이전 예시와 동일하게 다음 날 `Job`을 재실행했다고 가정한다. 재시작할 때 데이터베이스로부터 마지막 실행을 가리키는 `ExecutionContext` 값을 조회한다. 아래 예제처럼, `ItemReader`가 열릴 때 컨텍스트에 저장된 상태가 있는지 확인하고, 있다면 해당 컨텍스트를 참조해서 초기화한다.
 
 ```java
 if (executionContext.containsKey(getKey(LINES_READ_COUNT))) {
@@ -674,7 +666,9 @@ if (executionContext.containsKey(getKey(LINES_READ_COUNT))) {
 }
 ```
 
-위 코드를 실행하면 현재 라인은 40322이므로, 중단됐던 위치부터 `Step`을 다시 실행할 수 있다. 실행 자체에 관한 통계 데이터도 `ExecutionContext`를 활용하면 된다. 예를 들어, 여러 줄을 한 번에 처리해야 하고 그 처리에도 순서가 있다면 몇 번째 순서까지 진행했는지도 기록해야 한다 (단순히 읽어온 라인 수를 기록하는 것과는 다르다). 따라서 `Step`이 끝날 때 몇 번째 순서까지 진행했는지를 메일로 보낸다고 해보자. 프레임워크는 어떤 `JobInstance`를 사용하냐에 따라 그에 맞는 상태를 저장해주는데, 이미 있는 `ExecutionContext`를 사용할지 말지 판단하는 일은 쉽지만은 않다. 위에 나온 ‘EndOfDay’로 예를 들면, 01-01 배치를 두 번째로 실행할 때는 동일한 `JobInstance`를 사용하기 때문에 각 `Step`에서 데이터베이스로부터 `ExecutionContext`를 읽어와 함께 처리한다(`StepExecution`의 일부로). 반대로 01-02 배치에선 다른 `JobInstance`를 사용하므로 `Step`은 빈 컨텍스트를 주입받는다. 프레임워크는 여러 가지 상황을 고려해 job 인스턴스와 컨텍스트를 결정한다. `StepExecution`이 생길 때마다 `ExecutionContext`가 하나씩 생긴다는 점도 알아두자. `ExecutionContext`는 keyspace를 공유하기 때문에 주의해서 사용해야 한다. 즉, 데이터가 겹쳐 써지지 않도록 값을 넣을 때 주의해야 한다. 반대로 `Step`은 데이터 저장하지 않으므로 별다른 영향을 주지 않는다.
+위 코드를 실행하면 현재 라인은 40322이므로, 중단됐던 위치부터 `Step`을 다시 실행할 수 있다. 실행 자체에 관한 통계 데이터도 `ExecutionContext`를 활용하면 된다. 예를 들어, 여러 줄을 한 번에 처리해야 하고 그 처리에도 순서가 있다면 몇 번째 순서까지 진행했는지도 기록해야 한다 (단순히 읽어온 라인 수를 기록하는 것과는 다르다). 따라서 `Step`이 끝날 때 몇 번째 순서까지 진행했는지를 메일로 보낸다고 해보자. 프레임워크는 어떤 `JobInstance`를 사용하냐에 따라 그에 맞는 상태를 저장해주는데, 이미 있는 `ExecutionContext`를 사용할지 말지 판단하는 일은 쉽지만은 않다.
+
+ 
 
 또한 `JobExecution` 당 `ExecutionContext`가 하나인 것처럼, 모든 `StepExecution` 마다 `ExecutionContext`를 한 개씩 가지고 있다는 점도 잊지 말자. 예시로 아래 코드를 보자:
 
@@ -686,31 +680,35 @@ ExecutionContext ecJob = jobExecution.getExecutionContext();
 
 주석에서 말하듯이 `ecStep`과 `ecJob`은 같지 않다. `ExecutionContext`는 두 종류가 있다. 하나는 `Step` 레벨로 `Step` 내에서 커밋할 때마다 저장하고, `Job` 레벨의 컨텍스트는 모든 `Step` 실행 사이마다 저장한다.
 
+
+
+
+
+
+
 ------
 
 
 
- 
-
-
-
- 
-
 #### 1.4.2.4 StepContribution
 
-\- 청크 프로세스의 변경사항을 StepExecution에 업데이트 해주는 도메인 객체
-
-\- 청크 커밋 직전에 StepExecution의 apply 메소드를 호출하여 상태를 업데이트
-
-\- ExitStatus의 기본 종료 코드 외 사용자 정의 종료코드를 생성해서 적용 가능
+- 청크 프로세스의 변경사항을 StepExecution에 업데이트 해주는 도메인 객체
+- 청크 커밋 직전에 StepExecution의 apply 메소드를 호출하여 상태를 업데이트
+- ExitStatus의 기본 종료 코드 외 사용자 정의 종료코드를 생성해서 적용 가능
 
 
 
-`Step`은 배치 job의 독립적이고 순차적인 단계를 캡슐화한 도메인 객체다. 즉, 모든 Job은 하나 이상의 step으로 구성된다. 
+`Step`은 배치 job의 독립적이고 순차적인 단계를 캡슐화한 도메인 객체다. 즉, 모든 Job은 하나 이상의 step으로 구성된다. `Step`은 실제 배치 처리를 정의하고 컨트롤하는 데 필요한 모든 정보를 가지고 있다. 설명이 모호하게 느껴질 수도 있는데, `Step`의 모든 내용은 `Job`을 만드는 개발자 재량이기 때문에 그렇다. `Step`은 어떻게 개발하느냐에 따라 간단할 수도 있고 복잡할 수도 있다. 즉, 단순히 데이터베이스에서 파일을 읽는, 코드가 거의 필요 없거나 전혀 필요하지 않은(사용한 구현체에 따라 다름) 간단한 작업이 될 수도 있고, 프로세싱 일부를 처리하는 복잡한 비지니스 로직도 될 수 있다. 
 
-`Step`은 배치 job의 독립적이고 순차적인 단계를 캡슐화한 도메인 객체다. 즉, 모든 Job은 하나 이상의 step으로 구성된다. `Step`은 실제 배치 처리를 정의하고 컨트롤하는 데 필요한 모든 정보를 가지고 있다. 설명이 모호하게 느껴질 수도 있는데, `Step`의 모든 내용은 `Job`을 만드는 개발자 재량이기 때문에 그렇다. `Step`은 어떻게 개발하느냐에 따라 간단할 수도 있고 복잡할 수도 있다. 즉, 단순히 데이터베이스에서 파일을 읽는, 코드가 거의 필요 없거나 전혀 필요하지 않은(사용한 구현체에 따라 다름) 간단한 작업이 될 수도 있고, 프로세싱 일부를 처리하는 복잡한 비지니스 로직도 될 수 있다. 아래 그림처럼 `Job`이 고유 `JobExecution`이 있듯, `Step`도 각자의 `StepExecution`이 있다.
 
-![Job Hierarchy With Steps](https://godekdls.github.io/images/springbatch/job-hierarchy-with-steps.png)
+
+
+
+---
+
+
+
+
 
 #### 1.4.2.5 Flow
 
@@ -728,11 +726,21 @@ Step에서 실행되는 최소 실행 단위이다. 스프링에서 제공하는
 
 
 
+---
+
+
+
 # 2. Spring Batch 실습
 
 ## 2.1 사전준비
 
 ### 2.1.1 DataBase 준비
+
+#### 2.1.1.1 Docker 실행
+
+![image-20231021222211898](SpringBatch.assets/image-20231021222211898.png)
+
+#### 2.1.1.2 docker-compose 로  docker file 실행
 
 ```bash
 $ cd Docker
@@ -742,35 +750,6 @@ $ docker-compose up -d
 
 
 ## 2.2 맛보기 코드 실행
-
-Spring Batch의 의존성을 추가함으로써 Spring Batch를 사용할 수 있습니다.
-
-프로젝트를 첫 생성 시 Spring Batch Dependency를 추가하게 되면 spring-boot-starter-batch 의존성이 추가되는 것을 확인해 볼 수 있습니다. 
-
-*Spring Boot 3 버전으로 사용 시 Spring Batch 버전이 5 버전으로 의존성이 추가됩니다. 
-
-
-
-```java
-package com.example.batch_01;
-
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-@SpringBootApplication
-public class Batch01Application {
-
-  public static void main(String[] args) throws Exception {
-    System.exit(SpringApplication.exit(SpringApplication.run(BatchProcessingApplication.class, args)));
-  }
-}
-```
-
-`@SpringBootApplication` 은 다음을 모두 추가하는 어노테이션입니다.
-
-- `@Configuration`: Application Context에 대한 Bean 정의의 소스로 클래스에 태그를 지정합니다.
-- `@EnableAutoConfiguration`: 클래스 경로 설정, 기타 빈 및 다양한 속성 설정을 기반으로 빈 추가를 시작하도록 Spring Boot에 지시합니다.
-- `@ComponentScan`: Spring에 패키지의 다른 구성 요소, 구성 및 서비스를 찾아 `com/example` 패키지 하위의 컨트롤러를 찾도록 합니다.
 
 
 
@@ -782,7 +761,7 @@ Spring Batch가 실행될때, **Program arguments로 `job.name` 값이 넘어오
 여기서 `${job.name:NONE}`을 보면 `:`를 사이에 두고 좌측에 `job.name`이, 우측에 `NONE`이 있는데요.
 이 코드의 의미는 `job.name`**이 있으면** `job.name`**값을 할당하고, 없으면** `NONE`**을 할당**하겠다는 의미입니다.
 중요한 것은! `spring.batch.job.names`에 `NONE`이 할당되면 **어떤 배치도 실행하지 않겠다는 의미**입니다.
-즉, 혹시라도 **값이 없을때 모든 배치가 실행되지 않도록 막는 역할**입니다.
+즉, 혹시라도 **값이 없을때 모든 배치가 실행되지 않도록 방지하며 Job 을 선택하여 실행 할 수 있게하는 역할**입니다.
 
 
 
@@ -808,7 +787,7 @@ Spring Batch가 실행될때, **Program arguments로 `job.name` 값이 넘어오
 
 **/org/springframework/batch/core/schema-\*.sql**
 
-Spring Batch 메타데이터 테이블은 Java에서 이를 나타내는 Domain 객체와 매우 밀접하게 일치합니다. 예를 들어, `JobInstance`,`JobExcution` , `JobParameters` 는 각각 BATCH_JOB_INSTANCE, BATCH_JOB_EXECUTION, BATCH_JOB_EXECUTION_PARAMS 및 BATCH_STEP_EXECUTION에 매핑됩니다 `JobExecution`. BATCH_JOB_EXECUTION_CONTEXT 및 BATCH_STEP_EXECUTION_CONTEXT에 모두 매핑됩니다. 그만큼 `JobParameters``StepExecution``ExecutionContext``JobRepository`각 Java 객체를 올바른 테이블에 저장하고 저장하는 일을 담당합니다. 다음 부록에서는 메타데이터 테이블을 생성할 때 내려진 많은 디자인 결정과 함께 메타데이터 테이블을 자세히 설명합니다. 아래의 다양한 테이블 생성 명령문을 볼 때 사용된 데이터 유형이 최대한 일반적이라는 점을 인식하는 것이 중요합니다. Spring Batch는 개별 데이터베이스 공급업체의 데이터 유형 처리 차이로 인해 다양한 데이터 유형을 갖는 많은 스키마를 예제로 제공합니다. 다음은 6개 테이블 모두의 ERD 모델과 서로의 관계입니다.
+Spring Batch 메타데이터 테이블은 Java에서 이를 나타내는 Domain 객체와 매우 밀접하게 일치합니다. 예를 들어, `JobInstance`,`JobExcution` , `JobParameters` 는 각각 BATCH_JOB_INSTANCE, BATCH_JOB_EXECUTION, BATCH_JOB_EXECUTION_PARAMS 및 BATCH_STEP_EXECUTION에 매핑됩니다 `JobExecution`. BATCH_JOB_EXECUTION_CONTEXT 및 BATCH_STEP_EXECUTION_CONTEXT에 모두 매핑됩니다. 그만큼 `JobParameters` `StepExecution` `ExecutionContext` `JobRepository`각 Java 객체를 올바른 테이블에 저장하고 저장하는 일을 담당합니다.
 
 ![img](https://docs.spring.io/spring-batch/docs/3.0.x/reference/html/images/meta-data-erd.png)
 
@@ -936,6 +915,8 @@ https://docs.spring.io/spring-batch/docs/3.0.x/reference/html/metaDataSchema.htm
 - 스프링 부트에서 제공하는 ApplicationRunner의 구현체로 애플리케이션이 정상적으로 구동되자 마자 실행됩니다.
 - 기본적으로 빈으로 등록된 모든 Job을 실행시킵니다.
 
+
+
 **BatchProperties**
 
 application.properties 에서 Spring Batch의 환경 설정을 할 수 있습니다.
@@ -952,12 +933,10 @@ spring.batch.jdbc.initialize-schema = ALWAYS
 - enable
   - 기본값은 true
   - false는 스프링이 자동으로 Job을 실행하는 것을 막습니다.
-- names
+- name
   - enable이 true일 때, 자동으로 전체 Job이 실행되는데 특정 Job만 실행하도록 하는 옵션입니다.
-  - 여러 개 작성 시 쉼표(,)로 구분합니다.
-  - 하드코딩으로 넣어도 되지만 위처럼 사용하면 실행 시 argument로 주입받아서 사용할 수 있습니다.
-    - ex) --job.name=job1,job2
-    - job1, job2만 실행하고 존재하지 않으면 실행하지 않습니다.
+    - ex) --job.name=job1
+    - job1만 실행하고 존재하지 않으면 실행하지 않습니다.
     - 만약 아무런 argument가 주입되지 않는다면 아무런 배치도 실행되지 않습니다.
 - initialize-schema
   - EMBEDDED : **내장 DB일 때만** 실행되며 스키마가 자동으로 생성(Default)
@@ -1022,7 +1001,6 @@ spring.batch.jdbc.initialize-schema = ALWAYS
 
 - 여러 단계의 Step으로 구성할 수 있으며 Step을 순차적으로 실행시킵니다.
 - 모든 step의 실행이 성공적으로 완료되어야 Job이 성공적으로 완료됩니다.
-- **맨 마지막에 실행한 Step의 BatchStatus가 Job의 최종 BatchStatus가 됩니다.**
 
 
 
@@ -1147,228 +1125,7 @@ public class CustomJobParametersIncrementor implements JobParametersIncrementer 
     }
 ```
 
-
-
 구현체로 지원하는 RunIdIncrementer()의 경우 run.id 라는 키로 실행될 때마다 1부터 증가하여 파라미터에 값을 채워넣습니다.
-
-
-
-### 2.4.7 JobParameter와 Scope
-
-Spring Batch의 경우 외부 혹은 내부에서 파라미터를 받아 여러 Batch 컴포넌트에서 사용할 수 있게 지원하고 있습니다.
-이 파라미터를 **Job Parameter**라고 합니다.
-Job Parameter를 사용하기 위해선 항상 Spring Batch 전용 Scope를 선언해야만 하는데요.
-크게 `@StepScope`와 `@JobScope` 2가지가 있습니다.
-사용법은 간단한데, 아래와 같이 SpEL로 선언해서 사용하시면 됩니다.
-
-```java
-@Value("#{jobParameters[파라미터명]}")
-```
-
-> `jobParameters` 외에도 `jobExecutionContext`, `stepExecutionContext` 등도 SpEL로 사용할 수 있습니다.
-> @JobScope에선 `stepExecutionContext`는 사용할 수 없고, `jobParameters`와 `jobExecutionContext`만 사용할 수 있습니다.
-
-각각의 Scope에서 사용하는 샘플 코드는 아래와 같습니다.
-
-**JobScope**
-
-![sample-jobscope](https://t1.daumcdn.net/cfile/tistory/9997BF4F5B7607502F)
-
-**StepScope**
-
-![sample-stepscope](https://t1.daumcdn.net/cfile/tistory/9990DC505B76075029)
-
-**@JobScope는 Step 선언문에서** 사용 가능하고, **@StepScope는 Tasklet이나 ItemReader, ItemWriter, ItemProcessor**에서 사용할 수 있습니다.
-
-spring batch 5.0 이전에 Job Parameter의 타입으로 사용할 수 있는 것은 `Double`, `Long`, `Date`, `String` 이 있습니다.
-아쉽지만 `LocalDate`와 `LocalDateTime`이 없어 `String` 으로 받아 타입변환을 해서 사용해야했었지만
-
-V5.0 이후에는 더 많은 타입이 추가되었습니다.
-
-예제 코드를 보시면 호출하는 쪽에서 `null` 를 할당하고 있는데요.
-이는 **Job Parameter의 할당이 어플리케이션 실행시에 하지 않기 때문에** 가능합니다.
-자 이게 무슨 이야기인지 좀 더 자세히 들어가보겠습니다.
-
-
-
-### 2.4.8 JobScope & StepScope
-
-Spring Batch는 `@StepScope`와 `@JobScope` 라는 아주 특별한 Bean Scope를 지원합니다.
-아시다시피, **Spring Bean의 기본 Scope는 singleton**인데요.
-그러나 아래처럼 Spring Batch 컴포넌트 (Tasklet, ItemReader, ItemWriter, ItemProcessor 등)에 `@StepScope`를 사용하게 되면
-
-![stepscope1](https://t1.daumcdn.net/cfile/tistory/99A2F9475B7607502D)
-
-Spring Batch가 Spring 컨테이너를 통해 지정된 **Step의 실행시점에 해당 컴포넌트를 Spring Bean으로 생성**합니다.
-마찬가지로 `@JobScope`는 **Job 실행시점**에 Bean이 생성 됩니다.
-즉, **Bean의 생성 시점을 지정된 Scope가 실행되는 시점으로 지연**시킵니다.
-일종의 @Lazy Annotation 과 유사한 역할을 한다고 볼 수 있습니다.
-
-> 어떻게 보면 MVC의 request scope와 비슷할 수 있겠습니다.
-> request scope가 request가 왔을때 생성되고, response를 반환하면 삭제되는것처럼, JobScope, StepScope 역시 Job이 실행되고 끝날때, Step이 실행되고 끝날때 생성/삭제가 이루어진다고 보시면 됩니다.
-
-이렇게 Bean의 생성시점을 어플리케이션 실행 시점이 아닌, Step 혹은 Job의 실행시점으로 지연시키면서 얻는 장점은 크게 2가지가 있습니다.
-
-첫째로, **JobParameter의 Late Binding**이 가능합니다.
-Job Parameter가 StepContext 또는 JobExecutionContext 레벨에서 할당시킬 수 있습니다.
-꼭 Application이 실행되는 시점이 아니더라도 Controller나 Service와 같은 **비지니스 로직 처리 단계에서 Job Parameter를 할당**시킬 수 있습니다.
-이 부분은 아래에서 좀 더 자세하게 예제와 함께 설명드리겠습니다.
-
-두번째로, **동일한 컴포넌트를 병렬 혹은 동시에 사용할때 유용**합니다.
-Step 안에 Tasklet이 있고, 이 Tasklet은 멤버 변수와 이 멤버 변수를 변경하는 로직이 있다고 가정해봅시다.
-이 경우 `@StepScope` 없이 Step을 병렬로 실행시키게 되면 **서로 다른 Step에서 하나의 Tasklet을 두고 마구잡이로 상태를 변경**하려고 할것입니다.
-하지만 `@StepScope`가 있다면 **각각의 Step에서 별도의 Tasklet을 생성하고 관리하기 때문에 서로의 상태를 침범할 일이 없습니다**.
-
-
-
-Job Parameters는 `@Value`를 통해서 가능합니다.
-그러다보니 여러가지 오해가 있을 수 있는데요.
-Job Parameters는 Step이나, Tasklet, Reader 등 Batch 컴포넌트 Bean의 생성 시점에 호출할 수 있습니다만, 정확히는 **Scope Bean을 생성할때만 가능**합니다.
-즉, **`@StepScope`, `@JobScope` Bean을 생성할때만 Job Parameters가 생성**되기 때문에 사용할 수 있습니다.
-
-예를 들어 아래와 같이 메소드를 통해 Bean을 생성하지 않고, 클래스에서 직접 Bean 생성을 해보겠습니다.
-Job과 Step의 코드에서 `@Bean`과 `@Value("#{jobParameters[파라미터명]}")`를 **제거**하고 `SimpleJobTasklet`을 생성자 DI로 받도록 합니다.
-
-> `@Autowired`를 쓰셔도 됩니다.
-
-![jobparameter1](https://t1.daumcdn.net/cfile/tistory/9994B94E5B76075129)
-
-그리고 `SimpleJobTasklet`은 아래와 같이 `@Component`와 `@StepScope`로 **Scope가 Step인 Bean**으로 생성합니다.
-이 상태에서 `@Value("#{jobParameters[파라미터명]}`를 Tasklet의 멤버변수로 할당합니다.
-
-![jobparameter2](https://t1.daumcdn.net/cfile/tistory/99C0984A5B76075126)
-
-이렇게 **메소드의 파라미터로 JobParameter를 할당받지 않고, 클래스의 멤버 변수로 JobParameter를 할당** 받도록 해도 실행해보시면!
-
-![jobparameter3](https://t1.daumcdn.net/cfile/tistory/994B8F365B76075126)
-
-정상적으로 JobParameter를 받아 사용할 수 있습니다.
-이는 **SimpleJobTasklet Bean이 `@StepScope`로 생성**되었기 때문입니다.
-
-반면에, 이 SimpleJobTasklet Bean을 일반 singleton Bean으로 생성할 경우 아래와 같이 `'jobParameters' cannot be found` 에러가 발생합니다.
-
-![jobparameter4](https://t1.daumcdn.net/cfile/tistory/99B8343A5B76075127)
-
-즉, Bean을 메소드나 클래스 어느 것을 통해서 생성해도 무방하나 Bean의 Scope는 Step이나 Job이어야 한다는 것을 알 수 있습니다.
-
-JobParameters를 사용하기 위해선 꼭 **`@StepScope`, `@JobScope`로 Bean을 생성**해야한다는 것을 잊지마세요.
-
-### 2.4.9 JobParameter vs 시스템 변수
-
-앞의 이야기를 보면서 아마 이런 의문이 있을 수 있습니다.
-
-- 왜 꼭 Job Parameter를 써야하지?
-- 기존에 Spring Boot에서 사용하던 여러 환경변수 혹은 시스템 변수를 사용하면 되지 않나?
-- CommandLineRunner를 사용한다면 `java jar application.jar -D파라미터`로 시스템 변수를 지정하면 되지 않나?
-
-자 그래서 왜 Job Parameter를 써야하는지 설명드리겠습니다.
-아래 2가지 코드를 한번 보겠습니다.
-
-**JobParameter**
-
-```java
-@Bean
-@StepScope
-public FlatFileItemReader<Partner> reader(
-        @Value("#{jobParameters[pathToFile]}") String pathToFile){
-    FlatFileItemReader<Partner> itemReader = new FlatFileItemReader<Partner>();
-    itemReader.setLineMapper(lineMapper());
-    itemReader.setResource(new ClassPathResource(pathToFile));
-    return itemReader;
-}
-```
-
-**시스템 변수**
-
-> 여기에서 얘기하는 시스템 변수는 application.properties와 `-D` 옵션으로 실행하는 변수까지 포함합니다.
-
-```java
-@Bean
-@ConfigurationProperties(prefix = "my.prefix")
-protected class JobProperties {
-
-    String pathToFile;
-
-    ...getters/setters
-}
-
-@Autowired
-private JobProperties jobProperties;
-
-@Bean
-public FlatFileItemReader<Partner> reader() {
-    FlatFileItemReader<Partner> itemReader = new FlatFileItemReader<Partner>();
-    itemReader.setLineMapper(lineMapper());
-    String pathToFile = jobProperties.getPathToFile();
-    itemReader.setResource(new ClassPathResource(pathToFile));
-    return itemReader;
-}
-```
-
-위 2가지 방식에는 몇 가지 차이점이 있습니다.
-
-일단 첫번째로, 시스템 변수를 사용할 경우 **Spring Batch의 Job Parameter 관련 기능을 못쓰게** 됩니다.
-예를 들어, Spring Batch는 **같은 JobParameter로 같은 Job을 두 번 실행하지 않습니다**.
-하지만 시스템 변수를 사용하게 될 경우 이 기능이 전혀 작동하지 않습니다.
-또한 Spring Batch에서 자동으로 관리해주는 Parameter 관련 메타 테이블이 전혀 관리되지 않습니다.
-
-둘째, Command line이 아닌 다른 방법으로 Job을 실행하기가 어렵습니다.
-만약 실행해야한다면 **전역 상태 (시스템 변수 혹은 환경 변수)를 동적으로 계속해서 변경시킬 수 있도록** Spring Batch를 구성해야합니다.
-동시에 여러 Job을 실행하려는 경우 또는 테스트 코드로 Job을 실행해야할때 문제가 발생할 수 있습니다.
-
-특히 Job Parameter를 못쓰는 점은 큰 단점인데요.
-Job Parameter를 못쓴다는 것은 위에서도 언급한 **Late Binding을 못하게 된다**는 의미입니다.
-
-예를 들어 웹 서버가 있고, 이 웹서버에서 Batch를 수행한다고 가정해봅시다.
-외부에서 넘겨주는 파라미터에 따라 Batch가 다르게 작동해야한다면, 이를 시스템 변수로 풀어내는 것은 너무나 어렵습니다.
-하지만 아래와 같이 Job Parameter를 이용한다면 아주 쉽게 해결할 수 있습니다.
-
-```java
-@Slf4j
-@RequiredArgsConstructor
-@RestController
-public class JobLauncherController {
-
-    private final JobLauncher jobLauncher;
-    private final Job job;
-
-    @GetMapping("/launchjob")
-    public String handle(@RequestParam("fileName") String fileName) throws Exception {
-
-        try {
-            JobParameters jobParameters = new JobParametersBuilder()
-                                    .addString("input.file.name", fileName)
-                                    .addLong("time", System.currentTimeMillis())
-                                    .toJobParameters();
-            jobLauncher.run(job, jobParameters);
-        } catch (Exception e) {
-            log.info(e.getMessage());
-        }
-
-        return "Done";
-    }
-}
-```
-
-예제를 보시면 Controller에서 Request Parameter로 받은 값을 Job Parameter로 생성합니다.
-
-```java
-JobParameters jobParameters = new JobParametersBuilder()
-                        .addString("input.file.name", fileName)
-                        .addLong("time", System.currentTimeMillis())
-                        .toJobParameters();
-```
-
-그리고 생성한 Job Parameter로 Job을 수행합니다.
-
-```java
-jobLauncher.run(job, jobParameters);
-```
-
-즉, 개발자가 원하는 어느 타이밍이든 Job Parameter를 생성하고 Job을 수행할 수 있음을 알 수 있습니다.
-Job Parameter를 각각의 Batch 컴포넌트들이 사용하면 되니 **변경이 심한 경우에도 쉽게 대응**할 수 있습니다.
-
-
 
 
 
@@ -1433,12 +1190,14 @@ Job Parameter를 각각의 Batch 컴포넌트들이 사용하면 되니 **변경
 ![그림3](https://backtony.github.io/assets/img/post/spring/batch/4/4-3.PNG)
 스프링 배치에서 Step의 실행 단위는 크게 Task과 Chunk로 나눠집니다.
 
-- Chunk 기반
-  - 하나의 큰 덩어리를 n개씩 나눠서 실행한다는 의미로 대량 처리를 하는 경우에 적합합니다.
-  - ItemReader, ItemProcessor, ItemWriter를 사용하며 청크 기반 전용 Tasklet인 ChunkOrientedTasklet 구현체가 제공됩니다.
 - Task 기반
   - 단일 작업 기반으로 처리되는 경우에 적합합니다.
   - 주로 Tasklet 구현체를 만들어서 사용합니다.
+- Chunk 기반
+  - 하나의 큰 덩어리를 n개씩 나눠서 실행한다는 의미로 대량 처리를 하는 경우에 적합합니다.
+  - ItemReader, ItemProcessor, ItemWriter를 사용하며 청크 기반 전용 Tasklet인 ChunkOrientedTasklet 구현체가 제공됩니다.
+
+
 
 #### 2.4.5.3기본 API 소개
 
@@ -1569,10 +1328,10 @@ public class Sample02JobConfiguration {
 
 ![그림6](https://backtony.github.io/assets/img/post/spring/batch/4/4-6.PNG)
 
-Job이 TaskletStep을 호출하는 사이에서 StepExecution과 ExecutionContext가 생성되어 TaskletStep에 전달합니다.
-Tasklet이 실행되기 전에 StepListener의 beforeStep이 호출됩니다. Tasklet 작업이 끝나면 StepListener의 afterStep이 호출됩니다.
-StepExecution에 Step의 완료 상태를 업데이트합니다.
-참고로, StepExecutionListener 호출 후 추가적으로 exitStatus 상태를 업데이트할 수 있습니다.
+1. Job이 TaskletStep을 호출하는 사이에서 StepExecution과 ExecutionContext가 생성되어 TaskletStep에 전달합니다.
+2. Tasklet이 실행되기 전에 StepListener의 beforeStep이 호출됩니다. Tasklet 작업이 끝나면 StepListener의 afterStep이 호출됩니다.
+3. StepExecution에 Step의 완료 상태를 업데이트합니다.
+4. StepExecutionListener 호출 후 추가적으로 exitStatus 상태를 업데이트할 수 있습니다.
 
 
 
@@ -1582,9 +1341,9 @@ StepExecution에 Step의 완료 상태를 업데이트합니다.
 
 
 
-### 2.5.4 Chunk
+### 2.5.5 Chunk
 
-#### 2.5.4.1 **기본 개념**
+#### 2.5.5.1 **기본 개념**
 
 - **여러 개의 아이템을 묶은 하나의 덩어리** 를 의미합니다.
 - 한 번에 하나씩 아이템을 입력받아 Chunk 단위의 덩어리로 만든 후 Chunk 단위로 트랜잭션을 처리합니다.
@@ -1599,7 +1358,9 @@ StepExecution에 Step의 완료 상태를 업데이트합니다.
   - ItemReader로부터 전달받은 Chunk<I>를 참조해서 ItemProcessor에서 적절하게 가공한 뒤 ItemWriter로 전달되는 타입
   - 여기서 O는 Processor가 없다면 ItemReader로부터 전달받는 타입, Processor가 있다면 Processor로부터 전달받는 타입입니다.
 
-#### 2.5.4.2 아키텍처 
+
+
+#### 2.5.5.2 아키텍처 
 
 ![그림1](https://backtony.github.io/assets/img/post/spring/batch/6/6-1.PNG)
 
@@ -1611,7 +1372,9 @@ StepExecution에 Step의 완료 상태를 업데이트합니다.
 
 **ItemReader와 ItemProcessor는 각각의 하나씩 아이템을 처리하지면 ItemWriter는 Chunk 크기만큼을 한 번에 일괄 처리합니다.**
 
-#### 2.5.4.3 내부 구조
+
+
+#### 2.5.5.3 내부 구조
 
 ![그림2](https://backtony.github.io/assets/img/post/spring/batch/6/6-2.PNG)
 
@@ -1620,11 +1383,11 @@ StepExecution에 Step의 완료 상태를 업데이트합니다.
 
 
 
-#### 2.5.4.4 ChunkOrientedTasklet
+#### 2.5.5.4 ChunkOrientedTasklet
 
 ------
 
-#### 2.5.4.5 기본 개념
+#### 2.5.5.5 기본 개념
 
 - 스프링 배치에서 제공하는 **Tasklet 구현체로 Chunk 지향 프로세싱을 담당하는 도메인 객체** 입니다.
 - ItemReader, ItemWriter, ItemProcessor를 사용해 Chunk 기반 데이터 입출력을 담당합니다.
@@ -1632,7 +1395,9 @@ StepExecution에 Step의 완료 상태를 업데이트합니다.
 - exception이 발생할 경우, 해당 Chunk는 롤백되며 이전에 커밋한 Chunk는 완료 상태가 유지됩니다.
 - 내부적으로 ItemReader를 핸들링하는 ChunkProvider와 ItemProcessor, ItemWriter를 핸들링하는 ChunkProcessor 타입의 구현체를 갖습니다.
 
-#### 2.5.4.6 실행 순서
+
+
+#### 2.5.5.6 실행 순서
 
 ![그림3](https://backtony.github.io/assets/img/post/spring/batch/6/6-3.PNG)
 
@@ -1645,18 +1410,21 @@ StepExecution에 Step의 완료 상태를 업데이트합니다.
 7. ChunkProcessor는 가공된 아이템을 ItemWriter에 전달합니다.
 8. ItemWriter는 저장하는 등 쓰기 처리를 합니다.
 9. 이것이 하나의 Chunk Size 사이클로 이후 다시 ChunkOrientedTasklet에 가서 읽을 Item이 없을 때까지 반복합니다.
-10. 
 
-#### 2.5.4.7 ChunkProvider
+
+
+#### 2.5.5.7 ChunkProvider
 
 - **ItemReader를 사용해서 소스로부터 아이템을 Chunk size만큼 읽어서 Chunk단위로 만들어 제공하는 도메인 객체**
 - Chunk<I>를 만들고 내부적으로 반복문을 사용해서 ItemReader.read()를 계속 호출하면서 item을 Chunk<I>에 쌓습니다.
   - Chunk size만큼 item을 읽으면 반복문이 종료되고 ChunkProcessor로 넘깁니다.
   - ItemReader가 읽은 item이 null일 경우 read 반복문이 종료되고 해당 Step의 반복문도 종료됩니다.
-- 외부로부터 ChunkProvider이 호출될 때마다 **새로운 Chunk** 를 생성합니다.
-- 기본 구현체로 SimpleChunkProvider, FaultTolerantChunkProvider이 있습니다.
+- 외부로부터 ChunkProvider가 호출될 때마다 **새로운 Chunk** 를 생성합니다.
+- 기본 구현체로 SimpleChunkProvider, FaultTolerantChunkProvider가 있습니다.
 
-#### 2.5.4.8 ChunkProcessor
+
+
+#### 2.5.5.8 ChunkProcessor
 
 - **ItemProcessor를 사용해서 Item을 변형, 가공, 필터링하고 ItemWriter를 사용해서 Chunk 데이터를 저장, 출력합니다.**
 
@@ -1666,26 +1434,31 @@ StepExecution에 Step의 완료 상태를 업데이트합니다.
 
 - ItemProcessor 처리가 완료되면 Chunk<O>에 있는 List<item>을 ItemWriter에게 전달합니다.
 
-- **ItemWriter 처리가 완료되면 Chunk 트랜잭션이 종료되고 Step 반복문에서는 다시 ChunkOrientedTasklet가 새롭게 실행됩니다.**
+- **ItemWriter 처리가 완료되면 Chunk 트랜잭션이 종료되고 Step 반복문에서는 다시 ChunkOrientedTasklet이 새롭게 실행됩니다.**
 
 - ItemWriter는 Chunk size만큼 데이터를 커밋하기 때문에 Chunk size는 곧 Commit Interval(커밋 간격)이 됩니다.
 
 - 기본 구현체로 SimpleChunkProcessor와 FaultTolerantChunkProcessor가 있습니다.
 
-#### 2.5.4.9 기본 API
+
+
+#### 2.5.5.9 기본 API
 
 ![그림4](https://backtony.github.io/assets/img/post/spring/batch/6/6-4.PNG)
-위에 Chunk가 두 개 표기되어 있는데 실제로는 한 개만 사용 가능합니다.
-두가지 방법이 있다 정도로 알아두면 될 것 같습니다.
+위에 Chunk가 두 개 표기되어 있는데 실제로는 한 개만 사용 가능합니다.두가지 방법이 있다 정도로 알아두면 될 것 같습니다.
 
-#### 2.5.4.10 ItemReader
+readerIsTransationalQueue() Deprecated in V5.0
+
+
+
+#### 2.5.5.10 ItemReader
 
 ![그림5](https://backtony.github.io/assets/img/post/spring/batch/6/6-5.PNG)
 
 - 다양한 입력으로부터 데이터를 읽어서 제공하는 인터페이스입니다.
 
   - 플랫 파일 - csv, txt
-  - XML, Jsono
+  - XML, Json
   - Database
   - Message Queuing 서비스
   - Custom reader
@@ -1704,7 +1477,11 @@ StepExecution에 Step의 완료 상태를 업데이트합니다.
   - 아이템 하나는 파일의 한 줄, DB의 한 row, XML 파일에서 하나의 엘리먼트를 의미합니다.
   - 더 이상 처리해야 할 item이 없어도 예외가 발생하지 않고 itemProcessor와 같은 다음 단계로 넘어갑니다.
 
-#### 2.5.4.11 ItemWriter 
+
+
+
+
+#### 2.5.5.11 ItemWriter 
 
 ![그림6](https://backtony.github.io/assets/img/post/spring/batch/6/6-6.PNG)
 
@@ -1728,7 +1505,7 @@ StepExecution에 Step의 완료 상태를 업데이트합니다.
   - 출력 데이터를 아이템 리스트로 받아서 처리합니다.
   - 출력이 완료되고 트랜잭션이 종료되면 새로운 Chunk 단위 프로세스로 이동합니다.
 
-#### 2.5.4.12 ItemProcessor
+#### 2.5.5.12 ItemProcessor
 
 ![그림7](https://backtony.github.io/assets/img/post/spring/batch/6/6-7.PNG)
 
@@ -1743,7 +1520,7 @@ StepExecution에 Step의 완료 상태를 업데이트합니다.
   - **아이템을 하나씩 가공 처리하며 null을 리턴할 경우 해당 아이템은 Chunk<O>에 저장되지 않습니다.**
 - ItemStream을 구현하지 않고 거의 대부분 Customizing해서 사용하기 때문에 기본적으로 제공되는 구현체가 적습니다.
 
-#### 2.5.4.13 ItemStream
+#### 2.5.5.13 ItemStream
 
 ![그림8](https://backtony.github.io/assets/img/post/spring/batch/6/6-8.PNG)
 
@@ -1756,7 +1533,7 @@ StepExecution에 Step의 완료 상태를 업데이트합니다.
 
 
 
-#### 2.5.4.14 최종 아키텍처
+#### 2.5.5.14 최종 아키텍처
 
 ------
 
@@ -1780,7 +1557,7 @@ StepExecution에 Step의 완료 상태를 업데이트합니다.
 
 
 
-#### 2.5.4.15 . Page Size vs Chunk Size
+#### 2.5.5.15 . Page Size vs Chunk Size
 
 기존에 Spring Batch를 사용해보신 분들은 아마 PagingItemReader를 많이들 사용해보셨을 것입니다.
 PagingItemReader를 사용하신 분들 중 간혹 Page Size와 Chunk Size를 같은 의미로 오해하시는 분들이 계시는데요.
@@ -1828,10 +1605,7 @@ PageSize가 10이고, ChunkSize가 50이라면 **ItemReader에서 Page 조회가
 한번의 트랜잭션 처리를 위해 5번의 쿼리 조회가 발생하기 때문에 성능상 이슈가 발생할 수 있습니다. 그래서 Spring Batch의 PagingItemReader에는 클래스 상단에 다음과 같은 주석을 남겨두었습니다.
 
 > Setting a fairly large page size and using a commit interval that matches the page size should provide better performance.
-> (상당히 큰 페이지 크기를 설정하고 페이지 크기와 일치하는 커미트 간격을 사용하면 성능이 향상됩니다.)
-
-성능상 이슈 외에도 2개 값을 다르게 할 경우 JPA를 사용하신다면 영속성 컨텍스트가 깨지는 문제도 발생합니다.
-(이전에 관련해서 [문제를 정리](http://jojoldu.tistory.com/146)했으니 참고해보세요)
+> (상당히 큰 페이지 크기를 설정하고 페이지 크기와 일치하는 커밋 간격을 사용하면 성능이 향상됩니다.)
 
 2개 값이 의미하는 바가 다르지만 위에서 언급한 여러 이슈로 **2개 값을 일치시키는 것이 보편적으로 좋은 방법**이니 꼭 2개 값을 일치시키시길 추천드립니다.
 
@@ -1839,23 +1613,11 @@ PageSize가 10이고, ChunkSize가 50이라면 **ItemReader에서 Page 조회가
 
 
 
-#### Reader & Processor & Writer 설정
-
-TODO
-
-File,DB(JDBC,JPA),Redis,Kafka,MongoDB
-
-
-
-
-
-
-
-### 2.5.5 JobStep 
+### 2.5.6 JobStep 
 
 ------
 
-#### 2.5.5.1 기본 개념 
+#### 2.5.6.1 기본 개념 
 
 - 외부의 Job을 포함하고 있는 하나의 Step
 - 외부의 Job이 실패하면 해당 Step이 실패하므로 해당 Step을 품고있는 기본 Job도 실패합니다.
@@ -1865,12 +1627,11 @@ File,DB(JDBC,JPA),Redis,Kafka,MongoDB
 
 
 
-#### 2.5.5.2 API 소개
+#### 2.5.6.2 API 소개
 
 ![그림7](https://backtony.github.io/assets/img/post/spring/batch/4/4-7.PNG)
-parameterExtractor이 이해가 잘 안될텐데 예시에서 살펴보겠습니다.
 
-#### 2.5.5.3 Sample_03
+#### 2.5.6.3 Sample_03
 
 ```java
 @Configuration
@@ -1891,7 +1652,7 @@ public class HelloJobConfiguration {
                 .job(childJob(jobRepository,step1(jobRepository,transactionManager)))
                 .launcher(jobLauncher)
                 .parametersExtractor(jobParametersExtractor())
-                // 리스터를 통해서 Step이 시작하기 전에 Step의 ExecutionContext에 name과 backtony 키밸류값 등록
+                // 리스너를 통해서 Step이 시작하기 전에 Step의 ExecutionContext에 name과 backtony 키밸류값 등록
                 .listener(new StepExecutionListener() {
                     @Override
                     public void beforeStep(StepExecution stepExecution) {
@@ -1940,7 +1701,6 @@ JobStep의 경우 Step 안에서 Job이 실행되기 때문에 Job이 실행되�
 인자로 null을 넘겨주면 jobLauncher의 경우 DI를 통해 자동 주입되서 바로 사용하면 됩니다.
 **parametersExtractor는 StepExecution의 ExecutionContext에 있는 키-벨류값을 추출해서 jobParameters로 만들어 job으로 넘겨줍니다.**
 위 코드에서는 리스너를 통해서 StepExecution의 ExecutionContext에 name키값으로 값을 저장해주었고 jobParametersExtractor를 통해 추출해서 jobParameters로 만들었습니다.
-만약 추출했는데 값이 없다면 무시되고 진행됩니다.
 
 
 
@@ -1963,9 +1723,9 @@ JobStep의 경우 Step 안에서 Job이 실행되기 때문에 Job이 실행되�
 - Flow와 Job의 흐름을 구성하는데만 관여하고 실제 로직은 Step에서 이뤄집니다.
 - 내부적으로 SimpleFlow 객체를 포함하고 있으며 job 실행 시 호출됩니다.
 
-배치 상태 유형 
 
-FlowJob은 조건에 따라 분기되어 실행되는데 그에 대한 조건으로 상태를 이용합니다.
+
+FlowJob은 조건에 따라 분기되어 실행되는데 그에 대한 조건으로 아래 3가지 상태를 이용합니다.
 
 #### 2.6.1.2 Batch Status
 
@@ -1980,7 +1740,9 @@ ABANDONED와 FAILED와의 차이점은 FAILED는 실패 후 재실행 시 재시
   - Flow내 Step의 **ExitStatus** 값을 FlowExecutionStatus에 반영합니다.
   - 마지막 Flow의 FlowExecutionStatus 값을 Job의 최종 BatchStatus 값으로 반영합니다.
 
-#### 2.6.1.3ExitStatus
+
+
+#### 2.6.1.3 ExitStatus
 
 JobExecution과 StepExecution의 속성으로 Job과 Step의 실행 후 종료되는 상태를 나타냅니다.
 **기본적으로 ExitStatus는 BatchStatus와 동일한 값으로 설정됩니다.**
@@ -1992,6 +1754,8 @@ JobExecution과 StepExecution의 속성으로 Job과 Step의 실행 후 종료�
   - Flow내 Step의 **ExitStatus** 값을 FlowExecutionStatus 값으로 저장합니다.
   - 마지막 Flow의 FlowExecutionStatus 값을 Job의 최종 ExitStatus값으로 반영합니다.
 
+
+
 #### 2.6.1.4 FlowExecutionStatus
 
 - FlowExecution의 속성으로 Flow의 실행 후 최종 결과 상태를 나타냅니다.
@@ -1999,11 +1763,12 @@ JobExecution과 StepExecution의 속성으로 Job과 Step의 실행 후 종료�
 - FlowJob의 BatchStatus에 관여합니다.
 - COMPLETED, STOPPED, FAILED, UNKNOWN 의 상태가 있습니다.
 
+
+
 #### 2.6.1.5 API 소개 
 
 ![그림1](https://backtony.github.io/assets/img/post/spring/batch/5/5-1.PNG)
-FlowJob은 API설명만으로 이해하기는 어렵습니다.
-아래서 하나씩 살펴보겠습니다.
+
 
 #### 2.6.1.6 start(), next()
 
@@ -2012,6 +1777,8 @@ start에는 Flow와 Step이 모두 올 수 있습니다.
 Flow가 오게 되면 jobFlowBuilder가 반환되고, Step이 오면 SimpleJobBuilder가 반환됩니다.
 하지만 simpleJobBuilder도 on을 지원하기 때문에 start에 step을 인자로 넣고 뒤에서 on을 사용하면 jobFlowBuilder가 반환됩니다.
 next는 Step, Flow, JobExecutionDecider 타입을 받을 수 있습니다.
+
+
 
 #### 2.6.1.7 Transition
 
@@ -2205,6 +1972,8 @@ public class HelloJobConfiguration {
 - step1 실패 -> step2 성공 -> step2의 상태에 맞춰 Job의 BatchStatus, ExitStatus는 COMPLETED
 - step1 실패 -> step2 실패 -> StepExecution의 BatchStatusExitStatus, ExitStatus는 FAILED이지만 stopAndRestart로 인해 Job의 BatchStatus, ExitStatus는 STOPPED -> 재실행시 step3부터 시작
 
+
+
 **명확한 로직이 정해지지 않은 경우**
 
 앞선 예시들을 보면 분명 조건을 명시해주지 않았던 작업에 대해서도 동작하는 것을 확인할 수 있습니다.
@@ -2250,11 +2019,11 @@ private void addDanglingEndStates() {
 
 
 위 코드는 FlowBuilder 소스 중 일부입니다.
-만약 현재 스텝의 조건 전환이 끝나지 않았는데 아무런 상태 flow가 정의되어 있지 않은 경우에는 COMPLETED 를 추가하고 나머지 작업에 대해서는 FAILED 처리 flow가 추가됩니다.
+**만약 현재 스텝의 조건 전환이 끝나지 않았는데 아무런 상태 flow가 정의되어 있지 않은 경우에는 COMPLETED 를 추가하고 나머지 작업에 대해서는 FAILED 처리 flow가 추가됩니다.**
 만약 현재 스텝의 조건 전환이 끝나지 않았는데 완료조건만 있다면 실패조건이 추가되고, 실패조건만 있다면 완료조건이 추가됩니다.
 여기서 주의할 점은 만약 Custom한 Exitstatus만으로 on절을 명시하고 default transition인 FAILED, COMPLETED 정의가 모두 되어있지 않을 경우 FAILED 정의가 *으로 우선적으로 추가되기 때문에 step이 COMPLETED로 끝나고 잡은 FAILED 처리됩니다.
 
-이제 예시를 보겠습니다.
+
 
 ```java
 @Configuration
@@ -2286,10 +2055,11 @@ step2에는 성공, 실패에 대한 모든 정의가 되어있지 않기 때문
 스프링 배치가 기본적으로 조건을 추가해주는 작업은 to의 인수로 있는 작업에 한에서만 입니다.
 따라서 step1은 to문에 들어있지 않기 때문에 기본적인 조건 추가가 안들어가게 되어 예외가 발생하는 것입니다.
 
+
+
 #### 2.6.1.9 ExitStatus 커스텀하기
 
 간단하게 Step이 종료된 이후에 StepExecution의 ExitStatus를 PASS로 조작하는 리스너를 하나 만들어서 step2에 붙였습니다.
-사실 리스너를 붙여서 조작하는 방식보다는 바로 다음에 설명하는 JobExecutionDecider를 사용하는게 더 좋습니다.
 
 ```java
 public class PassCheckListener implements StepExecutionListener {
@@ -2369,21 +2139,36 @@ JobExecutionDecider는 **Transition 처리를 위한 전용 클래스** 로 Exit
 #### 2.6.1.11 Sample_05
 
 ```java
+package com.example.batch_01.sample05;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.Step;
+import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.job.flow.JobExecutionDecider;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.transaction.PlatformTransactionManager;
+
 @Configuration
 @RequiredArgsConstructor
-public class HelloJobConfiguration {
+public class Sample_05_JobConfigureation {
 
-    private final JobBuilderFactory jobBuilderFactory;
-    private final StepBuilderFactory stepBuilderFactory;
-
+    private final PlatformTransactionManager transactionManager;
+    private final JobRepository jobRepository;
 
     @Bean
-    public Job helloJob() {
-        return jobBuilderFactory.get("job")
-                .start(step()) 
+    public Job sample05() {
+            return new JobBuilder("sample05", jobRepository)
+                    .incrementer(new RunIdIncrementer())
+                .start(step())
                 .next(decider()) // step이 완료되면 decider를 실행
                     // decider의 반환값에 따른 분기
-                    .from(decider()).on("ODD").to(oddStep()) 
+                    .from(decider()).on("ODD").to(oddSTep())
                     .from(decider()).on("EVEN").to(evenStep())
                 .end() // SimpleFlow 객체 생성
                 .build();
@@ -2397,31 +2182,33 @@ public class HelloJobConfiguration {
 
     @Bean
     public Step step() {
-        return stepBuilderFactory.get("step")
+        return new StepBuilder("step",jobRepository)
                 .tasklet((stepContribution, chunkContext) -> {
                     System.out.println("step completed");
                     return RepeatStatus.FINISHED;
-                })
+                },transactionManager)
                 .build();
     }
 
     @Bean
     public Step evenStep() {
-        return stepBuilderFactory.get("evenStep")
+            return new StepBuilder("evenStep",jobRepository)
                 .tasklet((stepContribution, chunkContext) -> {
                     System.out.println("even completed");
                     return RepeatStatus.FINISHED;
-                })
+                },transactionManager)
                 .build();
     }
 
+
+
     @Bean
-    public Step oddStep() {
-        return stepBuilderFactory.get("oddStep")
+    public Step oddSTep() {
+            return new StepBuilder("oddSTep",jobRepository)
                 .tasklet((stepContribution, chunkContext) -> {
                     System.out.println("odd completed");
                     return RepeatStatus.FINISHED;
-                })
+                },transactionManager)
                 .build();
     }
 }
@@ -2452,13 +2239,14 @@ public class CustomDecider implements JobExecutionDecider {
 ------
 
 ![그림3](https://backtony.github.io/assets/img/post/spring/batch/5/5-3.PNG)
-JobLauncher는 FlowJob과 Jobparameters를 갖고 Job을 실행시킵니다.
-그 사이에 Job이 실행될 때 필요한 메타 데이터들을 생성합니다.(JobInstance, JobExecution, ExecutionContext)
-Job이 실행되기 전에 JobListener에서 beforeJob이 호출됩니다.
-FlowExecutor가 SimpleFlow를 실행시킵니다.
-그 사이에서 FlowExecution 객체가 생성되는데 이는 JobExecution, StepExecution 처럼 Flow를 실행시키면서 발생하는 정보를 담는 객체입니다.
-실행 결과 Flow가 가진 상태값 FlowExecutionStatus를 반환하게 되고 이를 FlowExecution에 업데이트합니다.
-이후 JobListener에서 afterJob이 호출되고, 마지막으로 FlowExecutionStatus 값을 Job의 BatchStatus와 ExitStatus에 업데이트 시키고 끝납니다.
+
+1. JobLauncher는 FlowJob과 Jobparameters를 갖고 Job을 실행시킵니다.
+2. 그 사이에 Job이 실행될 때 필요한 메타 데이터들을 생성합니다.(JobInstance, JobExecution, ExecutionContext) 
+3. Job이 실행되기 전에 JobListener에서 beforeJob이 호출됩니다.
+4. FlowExecutor가 SimpleFlow를 실행시킵니다.
+5. 그 사이에서 FlowExecution 객체가 생성되는데 이는 JobExecution, StepExecution 처럼 Flow를 실행시키면서 발생하는 정보를 담는 객체입니다.
+6. 실행 결과 Flow가 가진 상태값 FlowExecutionStatus를 반환하게 되고 이를 FlowExecution에 업데이트합니다.
+7. 이후 JobListener에서 afterJob이 호출되고, 마지막으로 FlowExecutionStatus 값을 Job의 BatchStatus와 ExitStatus에 업데이트 시키고 끝납니다.
 
 
 
@@ -2504,15 +2292,16 @@ SimpleFlow는 각각의 StateTransition를 List로 갖고 이를 통해서 나�
 
 
 ![그림7](https://backtony.github.io/assets/img/post/spring/batch/5/5-7.PNG)
-이제 전체적인 그림으로 보겠습니다.
-FlowJob은 FlowExecutor를 통해서 SimpleFlow를 실행합니다.
-SimpleFlow는 각각의 State들의 Flow를 담은 StateTransition를 리스트 형태로 갖고 있고 이를 통해서 StateMap을 초기화합니다.
-처음 실행될 StartState를 지정하고 실행합니다.
-StartState가 완료되면 다음 State를 실행하기 위해 resume() 메서드를 호출합니다.
-resume()메서드에서는 다음 State를 선택하기 위해서 nextState()를 호출하고 nextState에서는 StateMap을 통해 다음 State를 선택합니다.
-결과적으로 resume() 메서드로 돌아와 다음 State를 실행하게 됩니다.
-만약 다음 State가 FlowState일 경우, 그 안에 Flow가 존재하므로 다시 반복하게 됩니다.
-이런 구조로 SimpleFlow가 동작하게 됩니다.
+
+
+1. FlowJob은 FlowExecutor를 통해서 SimpleFlow를 실행합니다.
+2. SimpleFlow는 각각의 State들의 Flow를 담은 StateTransition를 리스트 형태로 갖고 있고 이를 통해서 StateMap을 초기화합니다.
+3. 처음 실행될 StartState를 지정하고 실행합니다.
+4. StartState가 완료되면 다음 State를 실행하기 위해 resume() 메서드를 호출합니다.
+5. resume()메서드에서는 다음 State를 선택하기 위해서 nextState()를 호출하고 nextState에서는 StateMap을 통해 다음 State를 선택합니다.
+6. 결과적으로 resume() 메서드로 돌아와 다음 State를 실행하게 됩니다.
+7. 만약 다음 State가 FlowState일 경우, 그 안에 Flow가 존재하므로 다시 반복하게 됩니다.
+   
 
 #### 2.6.2.4 Sample_06
 
@@ -2659,8 +2448,9 @@ public class Sample_07JobConfiguration {
 flow1에서 수행되는 step1의 ExitStatus를 FAILED처리 시켰고 이후 flow2가 수행됩니다.
 이때 JOB의 ExitStatus와 BatchStatus에 주목해야 합니다.
 Job의 BatchStatus는 COMPLETED이지만, ExitStatus는 FAILED입니다.
-이는 포스팅의 맨 앞쪽에서 step들끼리 on, to로 연결한 것과 다른 방식으로 업데이트 됩니다.
+이는 맨 앞쪽에서 step들끼리 on, to로 연결한 것과 다른 방식으로 업데이트 됩니다.
 즉, flow로 Job이 구성된 경우에는 다르게 업데이트 된다는 의미입니다.
+
 Job의 BatchStatus는 최종 흐름의 성공 여부에 따라 값이 반영됩니다.
 위의 경우 흐름에 따라 flow1이 실패하고 flow2를 성공적으로 끝내서 결과적으로 성공했습니다.
 따라서 BatchStatus는 COMPLETED로 처리됩니다.
@@ -2778,9 +2568,11 @@ Scope는 스프링 컨테이너에서 빈이 관리되는 범위를 의미합니
     - @Value(“#{stepExecutionContext[파라미터명]}”)
     - 을 사용해서 값을 주입받습니다.
   - @Value를 사용할 경우 빈 선언문에 @JobScope, @StepScope를 반드시 정의해야 합니다.
-- 병렬 처리 시 각 스레드 마다 생성된 스코프 빈이 할당되기 때문에 스레드에 안전하게 실행이 가능합니다
+- 병렬 처리 시 각 스레드 마다 생성된 스코프 빈이 할당되기 때문에 Thread-safe하게 실행이 가능합니다
   - 각 스레드마다 생성된 스코프 빈이 할당되어 각 스레드마다 프록시를 갖고 있어 빈을 호출 시 스레드마다 각각의 빈을 따로 생성하여 갖게 됩니다.
 - Bean과 연관되어 사용하는 것이기 때문에 Tasklet도 당연히 빈등록 해줘야 합니다.
+
+
 
 **JobScope**
 
@@ -2880,6 +2672,8 @@ public class CustomStepListener implements StepExecutionListener {
 @Value를 통해서 런타임시 주입되는 값들에 대해서는 코드로 아무것도 주지 않으면 컴파일 에러가 나기 때문에 null값으로 채워줍니다.
 리스너를 통해서 name, name2 값을 넣어줬고, 실행 시점에 IDE의 Configuration을 통해서 arguments로 message=message로 주고 실행시키면 주입한 값이 정상적으로 찍히게 됩니다.
 
+
+
 #### 2.6.3.5 사용하는 이유
 
 - 표현식 언어를 통해 유연하고 편리하게 주입받아 파라미터로 사용할 수 있게 됩니다.
@@ -2890,6 +2684,8 @@ public class CustomStepListener implements StepExecutionListener {
   - 만약 빈이 애플리케이션 로딩 시점에 만들어진다면 DI를 해야하는데 해당 값들이 현재 존재하지 않기 때문에 찾을 수가 없습니다.
   - 하지만 런타임 시점에 빈을 만들게 되면 값을 다 받아놓고(표현식에 명시한 값들) 빈을 만들기 때문에 주입이 가능하게 됩니다.
 - 병렬 처리시에 각 스레드마다 Step 객체가 생성되어 할당되기 때문에 Tasklet에 멤버 변수가 존재해도 동시성에 문제가 없습니다.
+
+
 
 #### 2.6.3.6 아키텍처
 
@@ -3413,25 +3209,74 @@ ChunkProvider는 내부적으로 RepeatTemplate을 갖고 있고 이를 이용�
 #### 2.8.2.4 Sample12
 
 ```java
+package com.example.batch_01.sample12;
+
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.Step;
+import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.item.ItemProcessor;
+import org.springframework.batch.item.ItemReader;
+import org.springframework.batch.repeat.RepeatCallback;
+import org.springframework.batch.repeat.RepeatContext;
+import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.batch.repeat.policy.SimpleCompletionPolicy;
+import org.springframework.batch.repeat.support.RepeatTemplate;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.transaction.PlatformTransactionManager;
+
+import com.example.batch_01.sample01.UserItemProcessor;
+import com.example.batch_01.sample13.CustomException;
+import com.example.batch_01.sample16.SkippableException;
+
+import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
 public class Sample12JobConfiguration {
-    private int chunkSize = 10;
-
+    private final PlatformTransactionManager transactionManager;
+    private final JobRepository jobRepository;
+    private int chunkSize = 5;
+    private final UserItemProcessor userItemProcessor;
+//    private final CustomItemReader customItemReader;
     @Bean
-    public Job helloJob() {
-        return jobBuilderFactory.get("job")
-                .start(step1())
+    public Job sample12() {
+        return new JobBuilder("sample12", jobRepository)
+                .start(sample12_step01())
                 .incrementer(new RunIdIncrementer())
                 .build();
     }
 
     @Bean
-    public Step step1() {
-        return stepBuilderFactory.get("step")
-                .<String, String>chunk(chunkSize)
-                .reader(customItemReader())
+    public ItemReader<String> customItemReader12() {
+        return new ItemReader<String>() {
+            int i = 0;
+
+            @Override
+            public String read() throws SkippableException {
+                i++;
+                if (i==11){
+                    throw new CustomException("skip exception");
+                }
+                System.out.println("itemReader : " + i);
+                return i > 20 ? null : String.valueOf(i);
+            }
+        };
+    }
+
+    
+    @SneakyThrows
+    @Bean
+    public Step sample12_step01() {
+        return new StepBuilder("sample12_step01",jobRepository)
+                .<String, String>chunk(chunkSize,transactionManager)
+                .reader(customItemReader12())
                 .processor(new ItemProcessor<String, String>() {
 
                     RepeatTemplate repeatTemplate = new RepeatTemplate();
@@ -3454,50 +3299,12 @@ public class Sample12JobConfiguration {
                 .writer(items -> System.out.println("items = " + items))
                 .build();
     }
-
-
-     
 }
 ```
 
 
 
 reader에서는 3개의 데이터를 읽고, Processor에서는 SimpleCompletePolicy에 의해 하나의 item을 3번 반복해서 처리하고 있는 예시입니다.
-
-
-
-process 부분만 따로 떼어내서 여러 정책을 함께 사용하는 방식을 보겠습니다.
-여러 정책을 함께 사용할 경우, 먼저 만족되는 것이 있으면 종료됩니다.
-
-```
-...
-.processor(new ItemProcessor<String, String>() {
-
-                    RepeatTemplate repeatTemplate = new RepeatTemplate();
-
-                    @Override
-                    public String process(String item) throws Exception {
-              
-                        CompositeCompletionPolicy compositeCompletionPolicy = new CompositeCompletionPolicy();
-                        CompletionPolicy[] completionPolicies = new CompletionPolicy[]{
-                                new SimpleCompletionPolicy(3),
-                                new TimeoutTerminationPolicy(3000)
-                        };
-                        compositeCompletionPolicy.setPolicies(completionPolicies);
-                        repeatTemplate.setCompletionPolicy(compositeCompletionPolicy);
-
-                        repeatTemplate.iterate(new RepeatCallback() {
-                            @Override
-                            public RepeatStatus doInIteration(RepeatContext context) throws Exception {
-                                System.out.println(item + " repeat");
-                                return RepeatStatus.CONTINUABLE;
-                            }
-                        });
-                        return item;
-                    }
-                })
-...
-```
 
 
 
@@ -3520,14 +3327,20 @@ process 부분만 따로 떼어내서 여러 정책을 함께 사용하는 방�
 
 FaultTolerant 구조는 청크 기반의 프로세스 기반 위에 Skip과 Retry 기능을 추가되어 재정의 되어 있습니다.
 
+
+
 ### 2.9.1 API
 
 ![그림4](https://backtony.github.io/assets/img/post/spring/batch/10/10-4.PNG)
+
+
 
 ### 2.9.2 Skip
 
 - Skip은 데이터를 처리하는 동안 설정된 Exception이 발생했을 경우, 해당 데이터 처리를 건너뛰는 기능입니다.
 - 데이터의 사소한 오류에 대해 Step의 실패처리 대신 Skip함으로써, 배치수행의 빈번한 실패를 줄일 수 있습니다.
+
+
 
 #### 2.9.2.1 동작 방식
 
@@ -3544,6 +3357,7 @@ FaultTolerant 구조는 청크 기반의 프로세스 기반 위에 Skip과 Retr
   - 위 그림에서 Writer에서 item4번에서 예외가 발생했다면 다시 Chunk 단위로 ItemReader로 돌아갑니다.
   - 캐싱된 데이터로 itemReader는 itemProcessor로 넘깁니다.
   - itemProcessor는 하나씩 다시 처리하고 List로 itemWriter로 보내지 않고 개별로 한 개씩 itemWriter로 보냅니다.
+  - 예외 발생 데이터만 제외하고 나머지는 정상처리 됩니다.
 
 #### 2.9.2.2 동작 과정
 
@@ -3552,50 +3366,85 @@ FaultTolerant 구조는 청크 기반의 프로세스 기반 위에 Skip과 Retr
 #### 2.9.2.3 Example13: itemReader Skip
 
 ```java
+package com.example.batch_01.sample13;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.Step;
+import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.transaction.PlatformTransactionManager;
+
 @Configuration
 @RequiredArgsConstructor
 public class Sample13JobConfiguration {
-    private final JobBuilderFactory jobBuilderFactory;
-    private final StepBuilderFactory stepBuilderFactory;
+    private final PlatformTransactionManager transactionManager;
+    private final JobRepository jobRepository;
+    private final CustomItemReader customItemReader;
     private int chunkSize = 5;
 
     @Bean
     public Job helloJob() {
-        return jobBuilderFactory.get("job")
-                .start(step1())
+        return new JobBuilder("sample13", jobRepository)
+                .start(sample13_step01())
                 .incrementer(new RunIdIncrementer())
                 .build();
     }
 
     @Bean
-    public Step step1() {
-        return stepBuilderFactory.get("step")
-                .<String, String>chunk(chunkSize)
-                .reader(customItemReader())
+    public Step sample13_step01() {
+        return new StepBuilder("sample13_step01",jobRepository)
+                .<String, String>chunk(chunkSize,transactionManager)
+                .reader(customItemReader)
                 .writer(items -> System.out.println("items = " + items))
                 .faultTolerant()
-                .skip(SkippableException.class)                
+                .skip(CustomException.class)
                 .skipLimit(4)
                 .build();
     }
 
-    @Bean
-    public ItemReader<String> customItemReader() {
-        return new ItemReader<String>() {
-            int i = 0;
 
-            @Override
-            public String read() throws SkippableException {
-                i++;
-                if (i==3){
-                    throw new SkippableException("skip exception");
-                }
-                System.out.println("itemReader : " + i);
-                return i > 20 ? null : String.valueOf(i);
-            }
-        };
+}
+---
+package com.example.batch_01.sample13;
+
+public class CustomException extends RuntimeException {
+
+    // 1. 매개 변수가 없는 기본 생성자
+    CustomException() {
+
+    }
+
+    // 2. 예외 발생 원인(예외 메시지)을 전달하기 위해 String 타입의 매개변수를 갖는 생성자
+    public CustomException(String message) {
+        super(message); // RuntimeException 클래스의 생성자를 호출합니다.
     }
 }
+---
+package com.example.batch_01.sample13;
+
+
+import org.springframework.batch.item.ItemReader;
+import org.springframework.stereotype.Component;
+
+@Component
+public class CustomItemReader implements ItemReader<String> {
+    int i = 0;
+    @Override
+    public String read() throws CustomException {
+        i++;
+        if (i%3==0){
+            throw new CustomException("skip exception");
+        }
+        System.out.println("itemReader : " + i);
+        return i > 20 ? null : String.valueOf(i);
+    }
+}
+
 ```
 
 
@@ -3808,12 +3657,14 @@ items = [3]
 itemProcessor 4
 itemProcessor 5
 items = [5]
-itemReader : 10
+itemReader : 6
 ```
 
-
-
 예외가 발생하고 난 후 itemProcessor는 itemWriter로 리스트가 아니라 한건씩만 보내서 처리하고 있는 것을 확인할 수 있습니다.
+
+
+
+
 
 ### 2.9.3 Retry
 
@@ -3839,28 +3690,44 @@ itemWriter는 skip과 다르게 원래대로 List로 한 번에 처리합니다.
 #### 2.9.3.4 Example16: retry Writer
 
 ```java
+package com.example.batch_01.sample16;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.Step;
+import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.item.ItemProcessor;
+import org.springframework.batch.item.ItemReader;
+import org.springframework.batch.item.ItemWriter;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.transaction.PlatformTransactionManager;
+
 @Configuration
 @RequiredArgsConstructor
 public class sample16JobConfiguration {
-    private final JobBuilderFactory jobBuilderFactory;
-    private final StepBuilderFactory stepBuilderFactory;
+    private final PlatformTransactionManager transactionManager;
+    private final JobRepository jobRepository;
     private int chunkSize = 5;
 
     @Bean
-    public Job helloJob() {
-        return jobBuilderFactory.get("job")
-                .start(step1())
+    public Job sample16() {
+        return new JobBuilder("sample16", jobRepository)
+                .start(sample16_step01())
                 .incrementer(new RunIdIncrementer())
                 .build();
     }
 
     @Bean
-    public Step step1() {
-        return stepBuilderFactory.get("step")
-                .<String, String>chunk(chunkSize)
-                .reader(customItemReader())
-                .processor(customItemProcessor1())
-                .writer(customItemWriter())
+    public Step sample16_step01() {
+        return new StepBuilder("sample16_step01",jobRepository)
+                .<String, String>chunk(chunkSize,transactionManager)
+                .reader(sample16_customItemReader())
+                .processor(sample16_customItemProcessor1())
+                .writer(sample16_customItemWriter())
                 .faultTolerant()
                 .retry(RetryableException.class)
                 .retryLimit(2)
@@ -3868,7 +3735,7 @@ public class sample16JobConfiguration {
     }
 
     @Bean
-    public ItemReader<String> customItemReader() {
+    public ItemReader<String> sample16_customItemReader() {
         return new ItemReader<String>() {
             int i = 0;
 
@@ -3883,7 +3750,7 @@ public class sample16JobConfiguration {
 
 
     @Bean
-    public ItemProcessor<? super String, String> customItemProcessor1() {
+    public ItemProcessor<? super String, String> sample16_customItemProcessor1() {
         return item -> {
             System.out.println("itemProcessor : " + item);
 
@@ -3893,7 +3760,7 @@ public class sample16JobConfiguration {
 
 
     @Bean
-    public ItemWriter<? super String> customItemWriter() {
+    public ItemWriter<? super String> sample16_customItemWriter() {
         return items -> {
             for (String item : items) {
                 if (item.equals("4")){
@@ -3934,28 +3801,46 @@ retryLimit이 2이므로 2번 재시작이 가능하고 3세트 진행 도중에
 #### 2.9.3.5 Exampl17: retry Processor
 
 ```java
+package com.example.batch_01.sample17;
+
+import com.example.batch_01.sample16.RetryableException;
+import com.example.batch_01.sample16.SkippableException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.Step;
+import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.item.ItemProcessor;
+import org.springframework.batch.item.ItemReader;
+import org.springframework.batch.item.ItemWriter;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.transaction.PlatformTransactionManager;
+
 @Configuration
 @RequiredArgsConstructor
 public class sample17JobConfiguration {
-    private final JobBuilderFactory jobBuilderFactory;
-    private final StepBuilderFactory stepBuilderFactory;
+    private final PlatformTransactionManager transactionManager;
+    private final JobRepository jobRepository;
     private int chunkSize = 5;
 
     @Bean
-    public Job helloJob() {
-        return jobBuilderFactory.get("job")
-                .start(step1())
+    public Job sample17() {
+        return new JobBuilder("sample17", jobRepository)
+                .start(sample17_step01())
                 .incrementer(new RunIdIncrementer())
                 .build();
     }
 
     @Bean
-    public Step step1() {
-        return stepBuilderFactory.get("step")
-                .<String, String>chunk(chunkSize)
-                .reader(customItemReader())
-                .processor(customItemProcessor1())
-                .writer(customItemWriter())
+    public Step sample17_step01() {
+        return new StepBuilder("sample17_step01",jobRepository)
+                .<String, String>chunk(chunkSize,transactionManager)
+                .reader(sample17_customItemReader())
+                .processor(sample17_customItemProcessor1())
+                .writer(sample17_customItemWriter())
                 .faultTolerant()
                 .retry(RetryableException.class)
                 .retryLimit(2)
@@ -3963,7 +3848,7 @@ public class sample17JobConfiguration {
     }
 
     @Bean
-    public ItemReader<String> customItemReader() {
+    public ItemReader<String> sample17_customItemReader() {
         return new ItemReader<String>() {
             int i = 0;
 
@@ -3977,7 +3862,7 @@ public class sample17JobConfiguration {
     }
 
     @Bean
-    public ItemProcessor<? super String, String> customItemProcessor1() {
+    public ItemProcessor<? super String, String> sample17_customItemProcessor1() {
         return item -> {
 
 
@@ -3991,7 +3876,7 @@ public class sample17JobConfiguration {
     }
 
     @Bean
-    public ItemWriter<? super String> customItemWriter() {
+    public ItemWriter<? super String> sample17_customItemWriter() {
         return items -> {
             System.out.println("items = " + items);
         };
@@ -4026,7 +3911,7 @@ itemReader에서는 캐시한 데이터를 사용하기에 콘솔에 찍히지 �
 위의 예시들처럼 예외가 발생했을 때 그냥 해당 아이템을 Skip하고 재시도하고 싶을 수 있습니다.
 이때는 Skip과 함께 사용하면 됩니다.
 
-```
+```java
 @Bean
 public Step step1() {
     return stepBuilderFactory.get("step")
@@ -4076,243 +3961,6 @@ recover코드로 진입하여 여기서 해당 item을 skip 처리하고 skipCou
 
 **만약 Writer에서 2번 예외가 발생해서 3회차에 skip처리까지 온다면 3회차 과정에서는 writer 일괄 처리 없이 processor 1개 처리, writer 1개 처리하는 방식으로 진행됩니다.**
 
-#### 2.9.3.7 Example19 : item마다 갖는 retry Count
-
-```java
-@Configuration
-@RequiredArgsConstructor
-public class sample19JobConfiguration {
-    private final JobBuilderFactory jobBuilderFactory;
-    private final StepBuilderFactory stepBuilderFactory;
-    private int chunkSize = 5;
-
-    @Bean
-    public Job helloJob() {
-        return jobBuilderFactory.get("job")
-                .start(step1())
-                .incrementer(new RunIdIncrementer())
-                .build();
-    }
-
-    @Bean
-    public Step step1() {
-        return stepBuilderFactory.get("step")
-                .<String, String>chunk(chunkSize)
-                .reader(customItemReader())
-                .processor(customItemProcessor1())
-                .writer(items -> System.out.println("items = " + items))
-                .faultTolerant()
-                .retry(RetryableException.class)
-                .retryLimit(2)
-                .skip(RetryableException.class)
-                .skipLimit(4)
-                .build();
-    }
-
-    @Bean
-    public ItemReader<String> customItemReader() {
-        return new ItemReader<String>() {
-            int i = 0;
-
-            @Override
-            public String read() throws RetryableException {
-                i++;
-                return i > 5 ? null : String.valueOf(i);
-            }
-        };
-    }
-
-    @Bean
-    public ItemProcessor<? super String, String> customItemProcessor1() {
-        return item -> {
-
-            if (item.equals("3")) {
-                System.out.println("itemProcessor : " + item);
-
-                return item;
-            }
-            throw new RetryableException("Process Failed ");
-        };
-    }
-}
---------------------------------
-// 출력 결과
-itemReader = 1
-itemReader = 2
-itemReader = 3
-itemReader = 4
-itemReader = 5
-itemProcessor : 1 // 1,2,3,4,5
-itemProcessor : 1 // 1,2,3,4,5
-itemProcessor : 2 // 1이 3번째 예외로 skip처리되고 2,3,4,5
-itemProcessor : 2 // 2,3,4,5
-itemProcessor : 3 // 2이 3번째 예외로 skip 처리되고 3,4,5
-itemProcessor : 4 // 3,4,5
-itemProcessor : 3 // 3,4,5
-itemProcessor : 4 // 3,4,5
-itemProcessor : 3 // 3, 4가 3번째 예외처리로 skip처리되고 바로 다음인 5 -> 3,5
-itemProcessor : 5 // 3,5
-itemProcessor : 3 // 3,5
-itemProcessor : 5 // 3,5
-itemProcessor : 3 // 5가 3번째 예외처리로 skip처리되고 3만 남음
-items = [3]
-itemReader = 10
-```
-
-
-
-위 코드는 item이 3일 때를 제외하고는 모두 RetryableException이 발생합니다.
-즉, RetryableException이 retryLimit으로 작성한 2보다 더 많이 발생합니다.
-하지만 Retry Count는 item마다 갖고 있기 때문에 item마다 카운트 됩니다.
-위 코드에서는 skip으로 인해 retryLimit이 넘어간 item들을 skip 처리됩니다.
-즉, 1,2,4,5는 skip처리되고 skipLimit이 4이므로 범위 안에 있기 때문에 정상적으로 처리가 완료됩니다.
-
-#### 2.9.3.8 Example20 : recover custom
-
-```java
-@Configuration
-@RequiredArgsConstructor
-public class sample20JobConfiguration {
-    private final JobBuilderFactory jobBuilderFactory;
-    private final StepBuilderFactory stepBuilderFactory;
-    private int chunkSize = 5;
-
-    @Bean
-    public Job helloJob() {
-        return jobBuilderFactory.get("job")
-                .start(step1())
-                .incrementer(new RunIdIncrementer())
-                .build();
-    }
-
-    @Bean
-    public Step step1() {
-        return stepBuilderFactory.get("step")
-                .<String, String>chunk(chunkSize)
-                .reader(customItemReader())
-                .processor(customItemProcessor1())
-                .writer(items -> System.out.println("items = " + items))
-                .faultTolerant()
-                .build();
-    }
-
-    @Bean
-    public ItemReader<String> customItemReader() {
-        return new ItemReader<String>() {
-            int i = 0;
-
-            @Override
-            public String read() throws RetryableException {
-                i++;
-                System.out.println("itemReader = " + i);
-                return i > 5 ? null : String.valueOf(i);
-            }
-        };
-    }
-
-    @Bean
-    public ItemProcessor<? super String, String> customItemProcessor1() {
-        return new CustomItemProcessor1(retryTemplate());
-    }
-
-    @Bean
-    public RetryTemplate retryTemplate(){
-        // retry 적용할 Exception Map에 담기
-        Map<Class<? extends Throwable>,Boolean> exceptionClass = new HashMap<>();
-        exceptionClass.put(RetryableException.class, true); // true : retry , false : noRetry
-
-        // retryLimit과 Exception 담은 map을 인수로
-        SimpleRetryPolicy simpleRetryPolicy = new SimpleRetryPolicy(2,exceptionClass);
-
-        // retry 시도 간격
-        FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
-        backOffPolicy.setBackOffPeriod(2000); // 2초
-
-        // retryTemplate 생성 및 세팅
-        RetryTemplate retryTemplate = new RetryTemplate();
-        retryTemplate.setRetryPolicy(simpleRetryPolicy);
-        //retryTemplate.setBackOffPolicy(backOffPolicy);
-
-        return retryTemplate;
-    }
-}
-------------------------------------------------------------------------------------
-@RequiredArgsConstructor
-public class CustomItemProcessor1 implements ItemProcessor<String, String> {
-    
-    private final RetryTemplate retryTemplate;
-
-    @Override
-    public String process(String item) throws Exception {
-
-        Classifier<Throwable,Boolean> rollbackClassifier = new BinaryExceptionClassifier(true);
-
-        String result = retryTemplate.execute(new RetryCallback<String, RuntimeException>() {
-                   @Override
-                   public String doWithRetry(RetryContext context) throws RuntimeException {
-                       if (item.equals("1") || item.equals("3")){
-                           throw new RetryableException("retry");
-                       }
-                       System.out.println("itemProcessor : " + item);
-                       return item;
-                   }
-               },
-                new RecoveryCallback<String>() {
-                    @Override
-                    public String recover(RetryContext context) throws Exception {
-                        System.out.println("recover : "+ item);
-                        return item; // 정상을 뱉어버려서 아무 이상없이 그대로 진행됨
-                    }
-                });
-        return result;
-    }
-}
-------------------------------------------------
-// 출력 결과
-itemReader = 1
-itemReader = 2
-itemReader = 3
-itemReader = 4
-itemReader = 5
-itemProcessor : 1
-itemProcessor : 1
-recover : 1
-itemProcessor : 2
-itemProcessor : 3
-itemProcessor : 3
-recover : 3
-itemProcessor : 4
-itemProcessor : 5
-items = [1, 2, 3, 4, 5]
-```
-
-
-
-retryTemplate을 직접 만들어서 원하는 세팅을 해주고, 만든 retryTemplate을 itemProcessor에서 사용한 예시입니다.
-doWithRetry에는 프로세서에서 할 일반적인 작업을 명시하고 recover에는 retry 횟수 초과 시 할 작업을 명시합니다.
-이는 기존의 동작 방식과 다르게 RetryableException이 터지면 청크의 첫 단계부터 다시 시작하는게 아니라 해당 item만 그대로 doWithRetry에서 다시 돌립니다.
-횟수 제한을 2로 두었으므로 3번째 실패부터 recover 로직을 타게 됩니다.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -4335,18 +3983,6 @@ https://backtony.github.io/spring
 https://alwayspr.tistory.com/49
 https://europani.github.io/spring/2023/06/26/052-spring-batch-version5.html
 https://velog.io/@mnetna/Spring-Data-Flow-using-Kubernetes-%EC%84%A4%EC%B9%98%EC%99%80-Remote-Partition-%EC%A0%81%EC%9A%A9
-```
-
-
-
-example
-
-```
 https://github.com/erenavsarogullari/OTV_SpringBatch_Chunk_Oriented_Processing
 https://www.baeldung.com/introduction-to-spring-batch
 ```
-
-
-
-
-

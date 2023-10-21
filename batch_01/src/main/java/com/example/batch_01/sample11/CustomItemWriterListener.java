@@ -1,7 +1,8 @@
 package com.example.batch_01.sample11;
 
-import com.example.batch_01.sample00.model.User;
 import org.springframework.batch.core.ItemWriteListener;
+
+import com.example.batch_01.sample01.User;
 
 import java.util.List;
 

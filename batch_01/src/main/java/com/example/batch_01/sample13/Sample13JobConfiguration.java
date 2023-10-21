@@ -1,6 +1,5 @@
 package com.example.batch_01.sample13;
 
-import com.example.batch_01.sample12.CustomItemReader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
@@ -35,7 +34,7 @@ public class Sample13JobConfiguration {
                 .reader(customItemReader)
                 .writer(items -> System.out.println("items = " + items))
                 .faultTolerant()
-                .skip(CustomException.class)
+                .skip(CustomException.class)//해
                 .skipLimit(4)
                 .build();
     }

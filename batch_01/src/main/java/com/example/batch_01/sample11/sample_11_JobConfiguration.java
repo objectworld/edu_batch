@@ -1,6 +1,5 @@
 package com.example.batch_01.sample11;
 
-import com.example.batch_01.sample00.model.User;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.batch.core.Job;
@@ -23,6 +22,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.transaction.PlatformTransactionManager;
+
+import com.example.batch_01.sample01.User;
 
 import javax.sql.DataSource;
 import java.sql.SQLException;

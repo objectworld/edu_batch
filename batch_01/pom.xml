@@ -51,6 +51,27 @@
 	<build>
 		<plugins>
 			<plugin>
+			    <groupId>com.google.cloud.tools</groupId>
+			    <artifactId>jib-maven-plugin</artifactId>
+			    <version>3.2.1</version>
+			    <configuration>
+			        <from>
+			            <image>eclipse-temurin:17-jre-alpine</image>
+			        </from>
+			        <to>
+						<image>cjs0533/sample</image>
+<!--			            <image>nexus-repo.ssongman.duckdns.org/sample/batch</image>-->
+			            <tags>cluster-0.0.1</tags>
+			            <auth>
+			                <username>cjs0533</username>
+			                <password>10278214a!</password>
+			            </auth>                      
+			        </to>
+			        <allowInsecureRegistries>true</allowInsecureRegistries>
+			    </configuration>
+			</plugin>
+
+			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
@@ -60,7 +81,7 @@
 							<artifactId>lombok</artifactId>
 						</exclude>
 					</excludes>
-				</configuration>
+				</configuration>	
 			</plugin>
 		</plugins>
 	</build>
