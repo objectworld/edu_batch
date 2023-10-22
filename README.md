@@ -54,6 +54,6 @@ Spring Batch 개발 및 Airflow를 통한 워크플로우 자동화
 
 
 
-#  별첨1. SpringBatch 별첨 ( [문서 보기](./SpringBatch 별첨.md) )
+#  별첨1. SpringBatch 별첨 ( [문서 보기](./SpringBatch별첨.md) )
 
   
