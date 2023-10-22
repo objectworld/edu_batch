@@ -672,7 +672,7 @@ $ helm upgrade --install airflow apache-airflow/airflow --namespace airflow --cr
 
 
 #테스트서버용
-$ helm upgrade --install airflow apache-airflow/airflow --namespace airflow --create-namespace --set dags.gitSync.enabled=true --set dags.gitSync.repo=http://gitlab.ssongman.duckdns.org/cjs/git-sync.git --set dags.gitSync.branch=main --set dags.gitSync.subPath=airflow/dags --set dags.gitSync.credentialsSecret=git-credentials --set dags.gitSync.wait=60 --set ingress.web.enabled=true 
+$ helm upgrade --install airflow apache-airflow/airflow --namespace airflow --create-namespace --set dags.gitSync.enabled=true --set dags.gitSync.repo=http://gitlab.ssongman.duckdns.org/cjs/git-sync.git --set dags.gitSync.branch=main --set dags.gitSync.subPath=airflow/dags/${USER_IDENTITY} --set dags.gitSync.credentialsSecret=git-credentials --set dags.gitSync.wait=60 --set ingress.web.enabled=true 
 --set ingress.web.host=airflow.ssongman.duckdns.org 
 --set ingress.web.ingressClassName=traefik
 ```
@@ -747,28 +747,32 @@ git sync 시 지정한 GitLab 특정경로(http://gitlab.ssongman.duckdns.org/cj
 
 ![image-20231019002658560](airflow_asset/image-20231019002658560.png)
 
-| 성명   | 계정      | 작업경로               |
-| ------ | --------- | ---------------------- |
-| 김유석 | airflow01 | airflow/dags/airflow01 |
-| 서예지 | airflow02 | airflow/dags/airflow02 |
-| 최정원 | airflow03 | airflow/dags/airflow03 |
-| 양지웅 | airflow04 | airflow/dags/airflow04 |
-| 채송화 | airflow05 | airflow/dags/airflow05 |
-| 신현아 | airflow06 | airflow/dags/airflow06 |
-| 오예진 | airflow07 | airflow/dags/airflow07 |
-| 양언모 | airflow08 | airflow/dags/airflow08 |
-| 박진명 | airflow09 | airflow/dags/airflow09 |
-| 류화동 | airflow10 | airflow/dags/airflow10 |
-| 유은나 | airflow11 | airflow/dags/airflow11 |
-| 황재연 | airflow12 | airflow/dags/airflow12 |
-| 백상열 | airflow13 | airflow/dags/airflow13 |
-| 문종학 | airflow14 | airflow/dags/airflow14 |
-| 박민성 | airflow15 | airflow/dags/airflow15 |
-| 김재혁 | airflow16 | airflow/dags/airflow16 |
-| 김수진 | airflow17 | airflow/dags/airflow17 |
-| 이도겸 | airflow18 | airflow/dags/airflow18 |
-| -      | airflow19 | airflow/dags/airflow19 |
-| -      | airflow20 | airflow/dags/airflow20 |
+
+
+**GitLab 계정 및 작업경로**
+
+| 성명   | 계정(USER_IDENTITY) | 작업경로               |
+| ------ | ------------------- | ---------------------- |
+| 김유석 | airflow01           | airflow/dags/airflow01 |
+| 서예지 | airflow02           | airflow/dags/airflow02 |
+| 최정원 | airflow03           | airflow/dags/airflow03 |
+| 양지웅 | airflow04           | airflow/dags/airflow04 |
+| 채송화 | airflow05           | airflow/dags/airflow05 |
+| 신현아 | airflow06           | airflow/dags/airflow06 |
+| 오예진 | airflow07           | airflow/dags/airflow07 |
+| 양언모 | airflow08           | airflow/dags/airflow08 |
+| 박진명 | airflow09           | airflow/dags/airflow09 |
+| 류화동 | airflow10           | airflow/dags/airflow10 |
+| 유은나 | airflow11           | airflow/dags/airflow11 |
+| 황재연 | airflow12           | airflow/dags/airflow12 |
+| 백상열 | airflow13           | airflow/dags/airflow13 |
+| 문종학 | airflow14           | airflow/dags/airflow14 |
+| 박민성 | airflow15           | airflow/dags/airflow15 |
+| 김재혁 | airflow16           | airflow/dags/airflow16 |
+| 김수진 | airflow17           | airflow/dags/airflow17 |
+| 이도겸 | airflow18           | airflow/dags/airflow18 |
+| -      | airflow19           | airflow/dags/airflow19 |
+| -      | airflow20           | airflow/dags/airflow20 |
 
 
 
