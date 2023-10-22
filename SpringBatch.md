@@ -2,6 +2,8 @@
 
 # 1. Spring Batch 개요
 
+![Spring Batch Introduction](SpringBatch.assets/scode=mtistory2&fname=https%3A%2F%2Fblog.kakaocdn.net%2Fdn%2Fdf9fvL%2Fbtrsc1rkO9Q%2FK4ZcTqNh1qh3AHVo4cqZK0%2Fimg.png)
+
 매월마다 이전달의 매출액을 집계해야하는 상황이있습니다. 그럼 과연 이 집계 과정을 어디서 수행하면 될까요?
 
 자바 언어와 웹 어플리케이션 밖에 모른다면 통상적으로 Tomcat + Spring MVC 가 생각이 날것같습니다
@@ -180,7 +182,7 @@ Spring Batch에는 다음과 같은 기술적 목표가 있습니다.
 
 Spring Batch 계층화 아키텍처
 
-![img](https://blog.kakaocdn.net/dn/bnFDbn/btrt1J2IjLo/GFyPOicHWmXhiTW2Ymgcck/img.png)
+![img](SpringBatch.assets/img.png)
 
 
 
@@ -220,7 +222,7 @@ Spring Batch 계층화 아키텍처
 
 스프링 배치는 견고하고 유지보수 가능한 시스템에서 일반적으로 사용하는 레이어, 컴포넌트, 기술 서비스의 물리적 구현체를 제공하는데, 이를 복잡한 요구사항을 해결하기 위한 인프라와 함께 확장하면, 단순한 배치부터 매우 복잡한 배치 응용 프로그램까지 개발할 수 있다.
 
-![img](https://blog.kakaocdn.net/dn/T1ug9/btrtRDW0Rtm/kn0txJZU27MSmo5qDKQjZ1/img.png)
+![img](SpringBatch.assets/img-1697983684265-67.png)
 
 
 
@@ -292,7 +294,7 @@ Chunk 기반 Step은 ItemReader, ItemProcessor, ItemWriter라는 3개의 주요 
 
 
 
-![img](https://blog.kakaocdn.net/dn/tNi1O/btrtZ7v5HrM/4eLtLQJIhopD4xgbpkhJw0/img.png)
+![img](SpringBatch.assets/img-1697983686420-70.png)
 
 
 
@@ -312,7 +314,7 @@ ItemReader와 ItemProcessor에서 데이터는 1건씩 다뤄지고, Writer에�
 
 
 
-![img](https://blog.kakaocdn.net/dn/dZTaqa/btrCHpb1Exs/iN3zrFmeNzmjTaIbkkmjS0/img.png)
+![img](SpringBatch.assets/img-1697983688154-73.png)
 
 
 
@@ -399,7 +401,7 @@ Job의 실행, 중지, 재시작 등의 작업을 수행하는 인터페이스�
 
 
 
-job은 전체 배치 프로세스를 캡슐화한 엔티티다. 다른 스프링 프로젝트와 마찬가지로, `Job`은 XML 기반이나 자바 기반 설정을 둘 다 지원한다. 이 설정은 “job 설정”이라고도 할 수 있지만, Job은 아래 다이어그램에서 보듯 가장 상위 개념 일 뿐이다.![img](https://blog.kakaocdn.net/dn/lyFtV/btrr0JjLRrm/NW9YDd8PAQZJXmLRb2NbSK/img.png)
+job은 전체 배치 프로세스를 캡슐화한 엔티티다. 다른 스프링 프로젝트와 마찬가지로, `Job`은 XML 기반이나 자바 기반 설정을 둘 다 지원한다. 이 설정은 “job 설정”이라고도 할 수 있지만, Job은 아래 다이어그램에서 보듯 가장 상위 개념 일 뿐이다.![img](SpringBatch.assets/img-1697983690501-76.png)
 
 #### 1.4.1.1 JobInstance
 
@@ -419,7 +421,7 @@ Job과 JobInstance는 1:M의 관계를 가지면서 BATCH_JOB_INSTANCE 테이블
 
 1) JobInstance 생성 Flow
 
-![img](https://blog.kakaocdn.net/dn/bFlw6x/btrtyePO0Oz/sP0CvKwGjUhtOAdWDbM7E0/img.png)
+![img](SpringBatch.assets/img-1697983692436-79.png)
 
 2) BATCH_JOB_INSTACE Table
 
@@ -446,7 +448,7 @@ JOB_KEY에는 Job Parameter를 해싱한 값이 저장이 됩니다.
 
  `JobInstance`가 Job과 어떻게 다른지 이야기하다 보면 보통 이런 질문이 나온다: “`JobInstance`는 다른 JobInstance와 어떻게 구분하지?” 정답은 `JobParameters`다. `JobParameters`는 배치 job을 시작할 때 사용하는 파라미터 셋을 가지고 있는 객체다. 아래 그림에서 보이듯, 실행 중 job을 식별하거나 참조 데이터로도 사용할 수 있다.
 
-![Job Parameters](https://godekdls.github.io/images/springbatch/job-parameters.png)
+![Job Parameters](SpringBatch.assets/job-parameters.png)
 
 앞에 나온 예시에서는  `Job`은 하나지만 `JobParameter`가 두 개 있다. JobInstance` = `Job` + 식별용 `JobParameters`. 덕분에 개발자는 효율적으로 `JobInstance`를 정의할 수 있으며, 거기 사용될 파라미터도 제어할 수 있다.
 
@@ -579,7 +581,7 @@ Job의 실행 단계를 나타내는 것으로, Tasklet 또는 Chunk 지향 처�
 
 
 
-![Job Hierarchy With Steps](https://godekdls.github.io/images/springbatch/job-hierarchy-with-steps.png)
+![Job Hierarchy With Steps](SpringBatch.assets/job-hierarchy-with-steps.png)
 
 
 
@@ -712,7 +714,7 @@ ExecutionContext ecJob = jobExecution.getExecutionContext();
 
 #### 1.4.2.5 Flow
 
-![img](https://blog.kakaocdn.net/dn/bLvjbe/btrwRylcb0g/K5H1auAW2C1g611lCdA4D1/img.png)
+![img](SpringBatch.assets/img-1697983700912-86.png)
 
 #### **1.4.2.6 Tasklet**
 
@@ -789,7 +791,7 @@ Spring Batch가 실행될때, **Program arguments로 `job.name` 값이 넘어오
 
 Spring Batch 메타데이터 테이블은 Java에서 이를 나타내는 Domain 객체와 매우 밀접하게 일치합니다. 예를 들어, `JobInstance`,`JobExcution` , `JobParameters` 는 각각 BATCH_JOB_INSTANCE, BATCH_JOB_EXECUTION, BATCH_JOB_EXECUTION_PARAMS 및 BATCH_STEP_EXECUTION에 매핑됩니다 `JobExecution`. BATCH_JOB_EXECUTION_CONTEXT 및 BATCH_STEP_EXECUTION_CONTEXT에 모두 매핑됩니다. 그만큼 `JobParameters` `StepExecution` `ExecutionContext` `JobRepository`각 Java 객체를 올바른 테이블에 저장하고 저장하는 일을 담당합니다.
 
-![img](https://docs.spring.io/spring-batch/docs/3.0.x/reference/html/images/meta-data-erd.png)
+![img](SpringBatch.assets/meta-data-erd.png)
 
 https://docs.spring.io/spring-batch/docs/3.0.x/reference/html/metaDataSchema.html
 
@@ -973,7 +975,7 @@ spring.batch.jdbc.initialize-schema = ALWAYS
 
 ### 2.4.2 아키텍처
 
-![그림1](https://backtony.github.io/assets/img/post/spring/batch/3/3-1.PNG)
+![그림1](SpringBatch.assets/3-1.png)
 
 - JobBuilder에서 start(step)를 사용하면 JobBuilder 내부적으로 SimpleJobBuilder를 생성하여 SimpleJob을 생성합니다.
 - JobBuilder에서 start(flow) 또는 flow(step)를 사용하면 JobBuilder 내부적으로 FlowJobBuilder를 생성하여 FlowJob을 생성합니다. 
@@ -984,7 +986,7 @@ spring.batch.jdbc.initialize-schema = ALWAYS
 
 ### 2.4.3 상속 구조
 
-![그림2](https://backtony.github.io/assets/img/post/spring/batch/3/3-2.PNG)
+![그림2](SpringBatch.assets/3-2.png)
 
 
 
@@ -1021,7 +1023,7 @@ public Job batchJob(){
 
 **SimpleJob 흐름도**
 
-![그림6](https://backtony.github.io/assets/img/post/spring/batch/3/3-6.PNG)
+![그림6](SpringBatch.assets/3-6.png)
 
 - JobLauncher는 SimpleJob과 Jobparameters를 갖고 Job을 실행시킵니다.
 - 그 사이에 Job이 실행될 때 필요한 메타 데이터들을 생성합니다.(JobInstance, JobExecution, ExecutionContext)
@@ -1034,7 +1036,7 @@ public Job batchJob(){
 
 ### 2.4.5 validator() 
 
-![그림4](https://backtony.github.io/assets/img/post/spring/batch/3/3-4.PNG)
+![그림4](SpringBatch.assets/3-4.png)
 
 - Job 실행에 꼭 필요한 파라미터를 검증하는 용도로 사용됩니다.
 - DefaultJobParametersValidator 구현체를 지원하며, 좀 더 복잡한 제약조건이 있다면 인터페이스를 직접 구현할 수도 있습니다.
@@ -1043,7 +1045,7 @@ public Job batchJob(){
 
 **동작 과정** 
 
-![그림5](https://backtony.github.io/assets/img/post/spring/batch/3/3-5.PNG)
+![그림5](SpringBatch.assets/3-5.png)
 
 기본적으로 제공하는 DefaultJobParametersValidator는 생성자의 인자로 반드시 있어야 하는 key값을 담고 있는 requiredKeys 배열과 있으나 없으나 상관 없는 optionalKeys 배열을 받습니다.
 만약 optionalKeys와 requiredKeys 둘 안에 없는 파라미터가 들어오면 예외를 뱉어냅니다.
@@ -1154,7 +1156,7 @@ public class CustomJobParametersIncrementor implements JobParametersIncrementer 
 
 ### 2.5.2 아키텍처 
 
-![그림1](https://backtony.github.io/assets/img/post/spring/batch/4/4-1.PNG)
+![그림1](SpringBatch.assets/4-1.png)
 
 - JobBuilderFactory의 구조와 유사합니다.
 - StepBuilderFactory에서 get을 호출하면 내부적으로 StepBuilder를 호출합니다.
@@ -1165,7 +1167,7 @@ public class CustomJobParametersIncrementor implements JobParametersIncrementer 
 
 ### 2.5.3 상속 구조
 
-![그림2](https://backtony.github.io/assets/img/post/spring/batch/4/4-2.PNG)
+![그림2](SpringBatch.assets/4-2.png)
 
 - StepBuilder는 StepBuilderHelper를 상속받고 있고 StepBuilderHelper는 공통적으로 Step 생성하는데 필요한 내용들을 담고 있습니다.
 - 각각의 하위 빌더들은 StepBuilderHelper를 상속받고 있고 각각에 맞는 Step들을 생성합니다.
@@ -1187,7 +1189,7 @@ public class CustomJobParametersIncrementor implements JobParametersIncrementer 
 
 #### 2.5.4.2 Task와 Chunk 기반 비교
 
-![그림3](https://backtony.github.io/assets/img/post/spring/batch/4/4-3.PNG)
+![그림3](SpringBatch.assets/4-3.png)
 스프링 배치에서 Step의 실행 단위는 크게 Task과 Chunk로 나눠집니다.
 
 - Task 기반
@@ -1216,7 +1218,7 @@ public Step batchStep(){
 
 #### 2.5.4.4 Tasklet
 
-![그림5](https://backtony.github.io/assets/img/post/spring/batch/4/4-5.PNG)
+![그림5](SpringBatch.assets/4-5.png)
 
 - 인터페이스로 execute 단일 메서드를 제공합니다.
 - **Step 내에서 구성되고 실행되는 도메인 객체** 로 주로 단일 테스크를 수행하기 위한 것입니다.
@@ -1326,7 +1328,7 @@ public class Sample02JobConfiguration {
 
 #### 2.5.4.8 TaskletStep 흐름도
 
-![그림6](https://backtony.github.io/assets/img/post/spring/batch/4/4-6.PNG)
+![그림6](SpringBatch.assets/4-6.png)
 
 1. Job이 TaskletStep을 호출하는 사이에서 StepExecution과 ExecutionContext가 생성되어 TaskletStep에 전달합니다.
 2. Tasklet이 실행되기 전에 StepListener의 beforeStep이 호출됩니다. Tasklet 작업이 끝나면 StepListener의 afterStep이 호출됩니다.
@@ -1362,7 +1364,7 @@ public class Sample02JobConfiguration {
 
 #### 2.5.5.2 아키텍처 
 
-![그림1](https://backtony.github.io/assets/img/post/spring/batch/6/6-1.PNG)
+![그림1](SpringBatch.assets/6-1.png)
 
 1. ItemReader가 Source를 한 건씩 읽고 한 건씩 Chunk크기 만큼 Chunk<I>에 저장합니다.
 2. Chunk 크기만큼 쌓였다면 Chunk<I>를 ItemProcessor에 전달합니다.
@@ -1376,7 +1378,7 @@ public class Sample02JobConfiguration {
 
 #### 2.5.5.3 내부 구조
 
-![그림2](https://backtony.github.io/assets/img/post/spring/batch/6/6-2.PNG)
+![그림2](SpringBatch.assets/6-2.png)
 
 청크사이즈만큼 가질 수 있는 List와 예외에 대한 필드들이 있습니다.
 내부 클래스로 ChunkIterator를 갖고 있는데 이는 Chunk가 갖고있는 items들을 한 건씩 가져올 때 사용합니다.
@@ -1399,7 +1401,7 @@ public class Sample02JobConfiguration {
 
 #### 2.5.5.6 실행 순서
 
-![그림3](https://backtony.github.io/assets/img/post/spring/batch/6/6-3.PNG)
+![그림3](SpringBatch.assets/6-3.png)
 
 1. TaskletStep이 execute 메서드로 ChunkOrientedTasklet를 호출합니다.
 2. ChunkOrientedTasklet는 provide 메서드로 ChunkProvider를 호출합니다.
@@ -1444,7 +1446,7 @@ public class Sample02JobConfiguration {
 
 #### 2.5.5.9 기본 API
 
-![그림4](https://backtony.github.io/assets/img/post/spring/batch/6/6-4.PNG)
+![그림4](SpringBatch.assets/6-4.png)
 위에 Chunk가 두 개 표기되어 있는데 실제로는 한 개만 사용 가능합니다.두가지 방법이 있다 정도로 알아두면 될 것 같습니다.
 
 readerIsTransationalQueue() Deprecated in V5.0
@@ -1453,7 +1455,7 @@ readerIsTransationalQueue() Deprecated in V5.0
 
 #### 2.5.5.10 ItemReader
 
-![그림5](https://backtony.github.io/assets/img/post/spring/batch/6/6-5.PNG)
+![그림5](SpringBatch.assets/6-5.png)
 
 - 다양한 입력으로부터 데이터를 읽어서 제공하는 인터페이스입니다.
 
@@ -1483,7 +1485,7 @@ readerIsTransationalQueue() Deprecated in V5.0
 
 #### 2.5.5.11 ItemWriter 
 
-![그림6](https://backtony.github.io/assets/img/post/spring/batch/6/6-6.PNG)
+![그림6](SpringBatch.assets/6-6.png)
 
 - Chunk 단위로 데이터를 받아 일괄 출력 작업을 위한 인터페이스입니다.
 
@@ -1507,7 +1509,7 @@ readerIsTransationalQueue() Deprecated in V5.0
 
 #### 2.5.5.12 ItemProcessor
 
-![그림7](https://backtony.github.io/assets/img/post/spring/batch/6/6-7.PNG)
+![그림7](SpringBatch.assets/6-7.png)
 
 - **데이터를 출력하기 전에 데이터를 가공 및 필터링 역할을 하는 인터페이스** 입니다.
 - ItemReader 및 ItemWriter와 분리되어 비즈니스 로직을 구현할 수 있습니다.
@@ -1522,7 +1524,7 @@ readerIsTransationalQueue() Deprecated in V5.0
 
 #### 2.5.5.13 ItemStream
 
-![그림8](https://backtony.github.io/assets/img/post/spring/batch/6/6-8.PNG)
+![그림8](SpringBatch.assets/6-8.png)
 
 - ItemReader와 ItemWriter 처리 과정 중 상태를 저장하고 오류가 발생하여 재시작 시 해당 상태를 참조하여 실패한 곳부터 재시작하도록 지원합니다.
 - 리소스를 열고(open) 닫아야(close) 하며 입출력 장치 초기화 등의 작업을 해야하는 경우 사용합니다.
@@ -1537,7 +1539,7 @@ readerIsTransationalQueue() Deprecated in V5.0
 
 ------
 
-![그림9](https://backtony.github.io/assets/img/post/spring/batch/6/6-9.PNG)
+![그림9](SpringBatch.assets/6-9.png)
 
 1. Job을 실행하면 TaskletStep이 실행됩니다.
 2. Tasklet은 내부에 RepeatTemplate라는 반복기를 가지고 있어 ChunkOrientedTasklet을 반복합니다.
@@ -1569,13 +1571,13 @@ PagingItemReader를 사용하신 분들 중 간혹 Page Size와 Chunk Size를 �
 
 PagingItemReader의 부모 클래스인 `AbstractItemCountingItemStreamItemReader`의 `read()` 메소드를 먼저 보겠습니다.
 
-![read1](https://t1.daumcdn.net/cfile/tistory/99CEA6335B814C4C23)
+![read1](SpringBatch.assets/99CEA6335B814C4C23.png)
 
 보시는것처럼 읽어올 데이터가 있다면 `doRead()`를 호출합니다.
 
 `doRead()`의 코드는 아래와 같습니다.
 
-![read2](https://t1.daumcdn.net/cfile/tistory/99A4433F5B814C4D0E)
+![read2](SpringBatch.assets/99A4433F5B814C4D0E.png)
 
 `doRead()`에서는 현재 읽어올 데이터가 없거나, Page Size를 초과한 경우 `doReadPage()`를 호출합니다.
 읽어올 데이터가 없는 경우는 read가 처음 시작할 때를 얘기합니다.
@@ -1591,7 +1593,7 @@ Page Size를 초과하는 경우는 예를 들면 Page Size가 10인데, 이번�
 
 JpaPagingItemReader의 `doReadPage()`의 코드는 아래와 같습니다.
 
-![read3](https://t1.daumcdn.net/cfile/tistory/99999E405B814C4D24)
+![read3](SpringBatch.assets/99999E405B814C4D24.png)
 
 Reader에서 지정한 Page Size만큼 `offset`, `limit` 값을 지정하여 페이징 쿼리를 생성 (`createQuery()`)하고, 사용 (`query.getResultList()`) 합니다.
 쿼리 실행 결과는 `results`에 저장합니다.
@@ -1629,7 +1631,7 @@ PageSize가 10이고, ChunkSize가 50이라면 **ItemReader에서 Page 조회가
 
 #### 2.5.6.2 API 소개
 
-![그림7](https://backtony.github.io/assets/img/post/spring/batch/4/4-7.PNG)
+![그림7](SpringBatch.assets/4-7.png)
 
 #### 2.5.6.3 Sample_03
 
@@ -1767,7 +1769,7 @@ JobExecution과 StepExecution의 속성으로 Job과 Step의 실행 후 종료�
 
 #### 2.6.1.5 API 소개 
 
-![그림1](https://backtony.github.io/assets/img/post/spring/batch/5/5-1.PNG)
+![그림1](SpringBatch.assets/5-1.png)
 
 
 #### 2.6.1.6 start(), next()
@@ -2238,7 +2240,7 @@ public class CustomDecider implements JobExecutionDecider {
 
 ------
 
-![그림3](https://backtony.github.io/assets/img/post/spring/batch/5/5-3.PNG)
+![그림3](SpringBatch.assets/5-3.png)
 
 1. JobLauncher는 FlowJob과 Jobparameters를 갖고 Job을 실행시킵니다.
 2. 그 사이에 Job이 실행될 때 필요한 메타 데이터들을 생성합니다.(JobInstance, JobExecution, ExecutionContext) 
@@ -2261,7 +2263,7 @@ public class CustomDecider implements JobExecutionDecider {
 
 #### 2.6.2.2 구조 및 구성
 
-![그림4](https://backtony.github.io/assets/img/post/spring/batch/5/5-4.PNG)
+![그림4](SpringBatch.assets/5-4.png)
 SimpleFlow는 Flow 인터페이스를 구현한 구현체입니다.
 여기서 갑자기 State라는 개념이 등장합니다.
 FlowJob을 실행시키면 Job을 구성한 여러 요소들을 포함하고 있는 SimpleFlow로 동작이 수행됩니다.
@@ -2275,7 +2277,7 @@ State의 구현체로는 FlowState, StepState 등 여러 개의 구현체가 있
 
 
 
-![그림5](https://backtony.github.io/assets/img/post/spring/batch/5/5-5.PNG)
+![그림5](SpringBatch.assets/5-5.png)
 각각의 api의 인자로 들어가있는 flow1과 flow2도 SimpleFlow입니다.
 end()는 전체를 감싸는 SimpleFlow를 생성합니다.
 즉, 하나의 큰 SimpleFlow 안에 여러 개의 SimpleFlow가 담겨있는 것입니다.
@@ -2283,7 +2285,7 @@ end()는 전체를 감싸는 SimpleFlow를 생성합니다.
 
 #### 2.6.2.3 아키텍처
 
-![그림6](https://backtony.github.io/assets/img/post/spring/batch/5/5-6.PNG)
+![그림6](SpringBatch.assets/5-6.png)
 앞서 각각의 State는 Job이 구성되는 시점에 인수타입에 맞게 FlowBuilder에 의해 생성된다고 했습니다.
 그림의 왼쪽 부분이 해당 내용입니다. 각 타입에 맞는 State가 생성되고 그 안에 해당 인수들이 담깁니다.
 이런 State들이 on에서 어떤 패턴을 만나면 어떤 다음 State로 이동하는 지에 대한 정보가 StateTransition 객체에 담기게 됩니다.
@@ -2291,7 +2293,7 @@ SimpleFlow는 각각의 StateTransition를 List로 갖고 이를 통해서 나�
 
 
 
-![그림7](https://backtony.github.io/assets/img/post/spring/batch/5/5-7.PNG)
+![그림7](SpringBatch.assets/5-7.png)
 
 
 1. FlowJob은 FlowExecutor를 통해서 SimpleFlow를 실행합니다.
@@ -2697,7 +2699,7 @@ public class CustomStepListener implements StepExecutionListener {
   - 실제 대상이 되는 빈을 저장하고 있는 JobContext, StepContext를 갖고 있습니다.
   - Job의 실행 시점에 프록시 객체는 실제 빈을 찾기 위해서 JobScope, StepScope의 JobContext, StepContext를 찾게 됩니다.
 
-![그림8](https://backtony.github.io/assets/img/post/spring/batch/5/5-8.PNG)
+![그림8](SpringBatch.assets/5-8.png)
 
 1. JobScope가 붙어서 프록시로 생성된 Step에 요청이 들어옵니다.
 2. 프록시는 JobScope의 JobContext에서 실제 타겟 빈이 존재하는지 확인합니다.
@@ -2743,7 +2745,7 @@ public interface JobExecutionListener {
 
 ### 2.7.1 동작 위치 
 
-![그림1](https://backtony.github.io/assets/img/post/spring/batch/12/12-1.PNG)
+![그림1](SpringBatch.assets/12-1.png)
 
 
 
@@ -2925,13 +2927,13 @@ public class CustomStepAnnotationExecutionListener {
 
 ------
 
-![그림3](https://backtony.github.io/assets/img/post/spring/batch/12/12-3.PNG)
+![그림3](SpringBatch.assets/12-3.png)
 청크 리스너는 청크 주기마다 호출됩니다.
 즉, reader - writer 하나의 싸이클 마다 호출됩니다.
 
 
 
-![그림4](https://backtony.github.io/assets/img/post/spring/batch/12/12-4.PNG)
+![그림4](SpringBatch.assets/12-4.png)
 
 네 가지 리스너 모두 애노테이션 방식을 지원합니다.
 
@@ -3158,7 +3160,7 @@ public class CustomItemWriterListener implements ItemWriteListener<User> {
 
 ### 2.8.1 구조
 
-![그림1](https://backtony.github.io/assets/img/post/spring/batch/10/10-1.PNG)
+![그림1](SpringBatch.assets/10-1.png)
 
 Step은 RepeatTemplate을 사용해 Tasklet을 반복적으로 실행합니다.
 ChunkOrientedTasklet은 내부적으로 ChunkProvider를 통해 ItemReader로 데이터를 읽어올 것을 지시합니다.
@@ -3168,7 +3170,7 @@ ChunkProvider는 내부적으로 RepeatTemplate을 갖고 있고 이를 이용�
 
 ### 2.8.2 반복 결정 여부 항목
 
-![그림2](https://backtony.github.io/assets/img/post/spring/batch/10/10-2.PNG)
+![그림2](SpringBatch.assets/10-2.png)
 
 
 
@@ -3323,7 +3325,7 @@ reader에서는 3개의 데이터를 읽고, Processor에서는 SimpleCompletePo
 
 
 
-![그림3](https://backtony.github.io/assets/img/post/spring/batch/10/10-3.PNG)
+![그림3](SpringBatch.assets/10-3.png)
 
 FaultTolerant 구조는 청크 기반의 프로세스 기반 위에 Skip과 Retry 기능을 추가되어 재정의 되어 있습니다.
 
@@ -3331,7 +3333,7 @@ FaultTolerant 구조는 청크 기반의 프로세스 기반 위에 Skip과 Retr
 
 ### 2.9.1 API
 
-![그림4](https://backtony.github.io/assets/img/post/spring/batch/10/10-4.PNG)
+![그림4](SpringBatch.assets/10-4.png)
 
 
 
@@ -3344,7 +3346,7 @@ FaultTolerant 구조는 청크 기반의 프로세스 기반 위에 Skip과 Retr
 
 #### 2.9.2.1 동작 방식
 
-![그림5](https://backtony.github.io/assets/img/post/spring/batch/10/10-5.PNG)
+![그림5](SpringBatch.assets/10-5.png)
 
 - itemReader
   - item을 한건씩 읽다가 예외가 발생하게 되면 해당 item을 skip하고 다음 item을 읽습니다.
@@ -3361,7 +3363,7 @@ FaultTolerant 구조는 청크 기반의 프로세스 기반 위에 Skip과 Retr
 
 #### 2.9.2.2 동작 과정
 
-![그림7](https://backtony.github.io/assets/img/post/spring/batch/10/10-7.PNG)
+![그림7](SpringBatch.assets/10-7.png)
 
 #### 2.9.2.3 Example13: itemReader Skip
 
@@ -3676,7 +3678,7 @@ itemReader : 6
 
 #### 2.9.3.1 동작 방식
 
-![그림6](https://backtony.github.io/assets/img/post/spring/batch/10/10-6.PNG)
+![그림6](SpringBatch.assets/10-6.png)
 기존에는 itemProcessor와 itemWriter는 ChunkProcessor에서 실행이 되었지만, Retry 기능이 활성화되면 RetryTemplate 안에서 ItemProcessor와 itemWriter가 실행됩니다.
 예외가 발생하면 RetryTemplate 안에서 처리가 진행이 됩니다.
 itemProcessor에서 예외가 발생하면 다시 Chunk 단계의 처음부터 시작합니다.
@@ -3685,7 +3687,7 @@ itemWriter는 skip과 다르게 원래대로 List로 한 번에 처리합니다.
 
 #### 2.9.3.2 동작 과정
 
-![그림8](https://backtony.github.io/assets/img/post/spring/batch/10/10-8.PNG)
+![그림8](SpringBatch.assets/10-8.png)
 
 #### 2.9.3.4 Example16: retry Writer
 
