@@ -1636,9 +1636,26 @@ PageSize가 10이고, ChunkSize가 50이라면 **ItemReader에서 Page 조회가
 #### 2.5.6.3 Sample_03
 
 ```java
+package com.example.batch_01.sample03;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.batch.core.*;
+import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.core.step.job.DefaultJobParametersExtractor;
+import org.springframework.batch.core.step.job.JobParametersExtractor;
+import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.transaction.PlatformTransactionManager;
+
+
 @Configuration
 @RequiredArgsConstructor
-public class HelloJobConfiguration {
+public class Sample_03_JobConfiguration {
 
     @Bean
     public Job sample03(JobRepository jobRepository, Step jobStep, Step scopeStep02) {
